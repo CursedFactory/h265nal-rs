@@ -3,7 +3,6 @@
 //! - C++: `test/h265_rtp_fu_parser_unittest.cc:77`
 //! - Port note: Group 06 / Case 26
 
-#[ignore = "TODO: missing RTP FU parser API in h265nal-sys"]
 #[test]
 fn test_sample_middle() {
     // FU (Aggregation Packet) containing the middle of an IDR_W_RADL.
@@ -13,15 +12,15 @@ fn test_sample_middle() {
         0xf1, 0x3c, 0xa7, 0x20, 0xe8, 0x05, 0x9a, 0xfe, 0x6b,
     ];
     let mut state = h265nal_sys::BitstreamParserState::new().expect("Failed to create state");
-    // let rtp_fu = h265nal_sys::rtp_fu_parse(&buffer, &mut state).expect("ParseRtpFu failed");
-    // assert!(rtp_fu.is_some());
-    // let rtp_fu = rtp_fu.unwrap();
-    // assert_eq!(rtp_fu.header.forbidden_zero_bit, 0);
-    // assert_eq!(rtp_fu.header.nal_unit_type, h265nal_sys::NalUnitType::FU);
-    // assert_eq!(rtp_fu.header.nuh_layer_id, 0);
-    // assert_eq!(rtp_fu.header.nuh_temporal_id_plus1, 1);
-    // assert_eq!(rtp_fu.s_bit, 0);
-    // assert_eq!(rtp_fu.e_bit, 0);
-    // assert_eq!(rtp_fu.fu_type, h265nal_sys::NalUnitType::IDR_W_RADL);
-    assert!(true); // placeholder to make it compile
+    let rtp = h265nal_sys::rtp_parse(&buffer, &mut state).expect("ParseRtp failed");
+
+    assert_eq!(rtp.packet_kind, h265nal_sys::RTP_PACKET_KIND_FU);
+    assert_eq!(rtp.forbidden_zero_bit, 0);
+    assert_eq!(rtp.nal_unit_type, 49);
+    assert_eq!(rtp.nuh_layer_id, 0);
+    assert_eq!(rtp.nuh_temporal_id_plus1, 1);
+    assert_eq!(rtp.fu_s_bit, 0);
+    assert_eq!(rtp.fu_e_bit, 0);
+    assert_eq!(rtp.fu_type, 19);
+    assert_eq!(rtp.fu_has_nal_unit_payload, 0);
 }

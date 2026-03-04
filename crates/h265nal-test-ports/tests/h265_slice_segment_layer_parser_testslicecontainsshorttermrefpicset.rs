@@ -4,7 +4,6 @@
 //! - Port note: Group 09 / Case 41
 
 #[test]
-#[ignore = "TODO: missing full ParseNalUnit API returning NalUnitState, and state access APIs"]
 fn test_slice_contains_short_term_ref_pic_set() {
     // VPS data
     let vps = [
@@ -53,17 +52,9 @@ fn test_slice_contains_short_term_ref_pic_set() {
     // ASSERT_EQ(1, bitstream_parser_state.pps.size());
     // ASSERT_TRUE(bitstream_parser_state.pps.find(0) != bitstream_parser_state.pps.end());
 
-    // Parse slice
-    let _slice_result = h265nal_sys::nal_unit_parse(&slice, &mut bitstream_parser_state, false)
-        .expect("Slice parsing failed");
-
-    // TODO: Check result is not null and nested pointers
-    // ASSERT_TRUE(result != nullptr);
-    // ASSERT_TRUE(result->nal_unit_payload != nullptr);
-    // ASSERT_TRUE(result->nal_unit_payload->slice_segment_layer != nullptr);
-
-    // TODO: Check slice_segment_header
-    // auto& slice_segment_header = result->nal_unit_payload->slice_segment_layer->slice_segment_header;
-    // ASSERT_TRUE(slice_segment_header != nullptr);
-    // EXPECT_EQ(39, slice_segment_header->num_entry_point_offsets);
+    let slice_payload = &slice[2..];
+    let slice_result =
+        h265nal_sys::slice_segment_layer_parse(slice_payload, 1, &mut bitstream_parser_state)
+            .expect("Slice parsing failed");
+    assert_eq!(slice_result.num_entry_point_offsets, 39);
 }

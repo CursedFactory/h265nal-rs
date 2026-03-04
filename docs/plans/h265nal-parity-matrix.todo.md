@@ -13,14 +13,14 @@
 - [x] Group 02 (cases 6-10)
 - [x] Group 03 (cases 11-15)
 - [x] Group 04 (cases 16-20)
-- [ ] Group 05 (cases 21-25) - in progress
-- [ ] Group 06 (cases 26-30)
-- [ ] Group 07 (cases 31-35)
-- [ ] Group 08 (cases 36-40)
-- [ ] Group 09 (cases 41-45)
-- [ ] Group 10 (cases 46-50)
-- [ ] Group 11 (cases 51-55)
-- [ ] Group 12 (cases 56-59)
+- [x] Group 05 (cases 21-25)
+- [x] Group 06 (cases 26-30)
+- [x] Group 07 (cases 31-35)
+- [x] Group 08 (cases 36-40)
+- [x] Group 09 (cases 41-45)
+- [x] Group 10 (cases 46-50)
+- [x] Group 11 (cases 51-55)
+- [x] Group 12 (cases 56-59)
 
 ## Track A: C ABI 1:1 Coverage
 

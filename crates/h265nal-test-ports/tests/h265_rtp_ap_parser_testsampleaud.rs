@@ -4,7 +4,6 @@
 //! - Port note: Group 05 / Case 24
 
 #[test]
-#[ignore = "TODO: missing h265nal_rtp_ap_parse function in h265nal-sys"]
 fn test_sample_aud() {
     // AP (Aggregation Packet) containing VPS, PPS, SPS
     // fuzzer::conv: data
@@ -21,29 +20,18 @@ fn test_sample_aud() {
         0x00, 0x0a, // NALU 3 (PPS)
         0x44, 0x01, 0xc0, 0xe2, 0x4f, 0x09, 0x41, 0xec, 0x10, 0x80,
     ];
-    // fuzzer::conv: begin
     let mut state = h265nal_sys::BitstreamParserState::new().expect("Failed to create state");
-    // TODO: rtp_ap = h265nal_rtp_ap_parse(&buffer, &mut state).expect("ParseRtpAp failed");
-    // fuzzer::conv: end
+    let rtp = h265nal_sys::rtp_parse(&buffer, &mut state).expect("ParseRtp failed");
 
-    // TODO: assert!(rtp_ap.is_some());
+    assert_eq!(rtp.packet_kind, h265nal_sys::RTP_PACKET_KIND_AP);
+    assert_eq!(rtp.forbidden_zero_bit, 0);
+    assert_eq!(rtp.nal_unit_type, 48);
+    assert_eq!(rtp.nuh_layer_id, 0);
+    assert_eq!(rtp.nuh_temporal_id_plus1, 1);
 
-    // TODO: check the common header
-    // TODO: let header = &rtp_ap.as_ref().unwrap().header;
-    // TODO: assert_eq!(header.forbidden_zero_bit, 0);
-    // TODO: assert_eq!(header.nal_unit_type, NalUnitType::AP as u32);
-    // TODO: assert_eq!(header.nuh_layer_id, 0);
-    // TODO: assert_eq!(header.nuh_temporal_id_plus1, 1);
+    assert_eq!(rtp.ap_nal_unit_sizes_count, 3);
+    assert_eq!(rtp.ap_nal_unit_headers_count, 3);
+    assert_eq!(rtp.ap_nal_unit_payloads_count, 3);
 
-    // TODO: check there are 3 valid NAL units
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_sizes.len(), 3);
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_headers.len(), 3);
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_payloads.len(), 3);
-
-    // TODO: check the types
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_headers[0].nal_unit_type, NalUnitType::VPS_NUT as u32);
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_headers[1].nal_unit_type, NalUnitType::SPS_NUT as u32);
-    // TODO: assert_eq!(rtp_ap.as_ref().unwrap().nal_unit_headers[2].nal_unit_type, NalUnitType::PPS_NUT as u32);
-
-    // TODO: check the parser state
+    assert_eq!(rtp.ap_nal_unit_types, vec![32, 33, 34]);
 }

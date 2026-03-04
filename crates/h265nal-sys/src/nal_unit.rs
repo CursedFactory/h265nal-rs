@@ -4,6 +4,8 @@ use crate::state::BitstreamParserState;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NalUnitFields {
+    pub checksum_size: usize,
+    pub checksum: [u8; 4],
     pub parsed_length: usize,
     pub forbidden_zero_bit: u32,
     pub nal_unit_type: u32,
@@ -41,6 +43,8 @@ pub fn nal_unit_parse(
     add_checksum: bool,
 ) -> Result<NalUnitFields, Error> {
     let mut raw = RawNalUnitFields {
+        checksum_size: 0,
+        checksum: [0; 4],
         parsed_length: 0,
         forbidden_zero_bit: 0,
         nal_unit_type: 0,
@@ -58,6 +62,8 @@ pub fn nal_unit_parse(
     };
     status_to_result(status)?;
     Ok(NalUnitFields {
+        checksum_size: raw.checksum_size,
+        checksum: raw.checksum,
         parsed_length: raw.parsed_length,
         forbidden_zero_bit: raw.forbidden_zero_bit,
         nal_unit_type: raw.nal_unit_type,

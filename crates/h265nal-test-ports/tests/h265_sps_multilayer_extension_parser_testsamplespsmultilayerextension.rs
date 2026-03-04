@@ -4,11 +4,9 @@
 //! - Port note: Group 09 / Case 43
 
 #[test]
-#[ignore = "TODO: missing SPS multilayer extension parser API in h265nal-sys"]
 fn test_sample_sps_multilayer_extension() {
-    // TODO: Implement when h265nal_sys exposes SPS multilayer extension parser
-    // Expected buffer: [0xff]
-    // Expected fields:
-    // - sps_multilayer_extension is non-null
-    // - inter_view_mv_vert_constraint_flag: 1
+    let buffer = [0xffu8];
+    let extension = h265nal_sys::sps_multilayer_extension_parse(&buffer)
+        .expect("ParseSpsMultilayerExtension failed");
+    assert_eq!(extension.inter_view_mv_vert_constraint_flag, 1);
 }

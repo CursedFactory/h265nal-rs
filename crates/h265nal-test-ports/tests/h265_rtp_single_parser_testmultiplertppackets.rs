@@ -4,7 +4,6 @@
 //! - Port note: Group 06 / Case 30
 
 #[test]
-#[ignore = "TODO: missing h265nal_rtp_single_parse function in h265nal-sys"]
 fn test_multiple_rtp_packets() {
     let vbuffer = vec![
         // VPS for a 1280x720 camera capture.
@@ -32,56 +31,38 @@ fn test_multiple_rtp_packets() {
         ],
     ];
     let mut state = h265nal_sys::BitstreamParserState::new().expect("Failed to create state");
-    // parse packets one-by-one
     for (i, buffer) in vbuffer.iter().enumerate() {
-        // TODO: let rtp_single = h265nal_rtp_single_parse(&buffer, &mut state).expect("ParseRtpSingle failed");
-        // TODO: assert!(rtp_single.is_some());
+        let rtp = h265nal_sys::rtp_parse(buffer, &mut state).expect("ParseRtp failed");
+        assert_eq!(rtp.packet_kind, h265nal_sys::RTP_PACKET_KIND_SINGLE);
 
-        // TODO: check the header
-        // TODO: let header = &rtp_single.as_ref().unwrap().nal_unit_header;
-        // TODO: let payload = &rtp_single.as_ref().unwrap().nal_unit_payload;
-
-        if i == 0 { // VPS
-             // TODO: check the header
-             // TODO: assert_eq!(header.forbidden_zero_bit, 0);
-             // TODO: assert_eq!(header.nal_unit_type, NalUnitType::VPS_NUT as u32);
-             // TODO: assert_eq!(header.nuh_layer_id, 0);
-             // TODO: assert_eq!(header.nuh_temporal_id_plus1, 1);
-        } else if i == 1 { // SPS
-             // TODO: check the header
-             // TODO: assert_eq!(header.forbidden_zero_bit, 0);
-             // TODO: assert_eq!(header.nal_unit_type, NalUnitType::SPS_NUT as u32);
-             // TODO: assert_eq!(header.nuh_layer_id, 0);
-             // TODO: assert_eq!(header.nuh_temporal_id_plus1, 1);
-             // TODO: check some values
-             // TODO: let sps = &payload.sps;
-             // TODO: assert_eq!(sps.pic_width_in_luma_samples, 1280);
-             // TODO: assert_eq!(sps.pic_height_in_luma_samples, 736);
-             // TODO: let sps_id = sps.sps_seq_parameter_set_id;
-             // TODO: assert_eq!(state.sps[sps_id as usize].pic_width_in_luma_samples, 1280);
-             // TODO: assert_eq!(state.sps[sps_id as usize].pic_height_in_luma_samples, 736);
-        } else if i == 2 { // PPS
-             // TODO: check the header
-             // TODO: assert_eq!(header.forbidden_zero_bit, 0);
-             // TODO: assert_eq!(header.nal_unit_type, NalUnitType::PPS_NUT as u32);
-             // TODO: assert_eq!(header.nuh_layer_id, 0);
-             // TODO: assert_eq!(header.nuh_temporal_id_plus1, 1);
-             // TODO: check some values
-             // TODO: let pps = &payload.pps;
-             // TODO: assert_eq!(pps.init_qp_minus26, 0);
-             // TODO: let pps_id = pps.pps_pic_parameter_set_id;
-             // TODO: assert_eq!(state.pps[pps_id as usize].init_qp_minus26, 0);
-        } else if i == 3 { // slice
-             // TODO: check the header
-             // TODO: assert_eq!(header.forbidden_zero_bit, 0);
-             // TODO: assert_eq!(header.nal_unit_type, NalUnitType::IDR_W_RADL as u32);
-             // TODO: assert_eq!(header.nuh_layer_id, 0);
-             // TODO: assert_eq!(header.nuh_temporal_id_plus1, 1);
-             // TODO: check some values
-             // TODO: let slice_header = &payload.slice_segment_layer.slice_segment_header;
-             // TODO: assert_eq!(slice_header.slice_qp_delta, 9);
-             // TODO: let pps_id = slice_header.slice_pic_parameter_set_id;
-             // TODO: assert_eq!(state.pps[pps_id as usize].init_qp_minus26, 0);
+        if i == 0 {
+            assert_eq!(rtp.forbidden_zero_bit, 0);
+            assert_eq!(rtp.nal_unit_type, 32);
+            assert_eq!(rtp.nuh_layer_id, 0);
+            assert_eq!(rtp.nuh_temporal_id_plus1, 1);
+        } else if i == 1 {
+            assert_eq!(rtp.forbidden_zero_bit, 0);
+            assert_eq!(rtp.nal_unit_type, 33);
+            assert_eq!(rtp.nuh_layer_id, 0);
+            assert_eq!(rtp.nuh_temporal_id_plus1, 1);
+            assert_eq!(rtp.has_payload_sps, 1);
+            assert_eq!(rtp.payload_sps_pic_width_in_luma_samples, 1280);
+            assert_eq!(rtp.payload_sps_pic_height_in_luma_samples, 736);
+        } else if i == 2 {
+            assert_eq!(rtp.forbidden_zero_bit, 0);
+            assert_eq!(rtp.nal_unit_type, 34);
+            assert_eq!(rtp.nuh_layer_id, 0);
+            assert_eq!(rtp.nuh_temporal_id_plus1, 1);
+            assert_eq!(rtp.has_payload_pps, 1);
+            assert_eq!(rtp.payload_pps_init_qp_minus26, 0);
+        } else if i == 3 {
+            assert_eq!(rtp.forbidden_zero_bit, 0);
+            assert_eq!(rtp.nal_unit_type, 19);
+            assert_eq!(rtp.nuh_layer_id, 0);
+            assert_eq!(rtp.nuh_temporal_id_plus1, 1);
+            assert_eq!(rtp.has_payload_slice_segment_header, 1);
+            assert_eq!(rtp.payload_slice_qp_delta, 9);
+            assert_eq!(rtp.payload_slice_pic_parameter_set_id, 0);
         }
     }
 }

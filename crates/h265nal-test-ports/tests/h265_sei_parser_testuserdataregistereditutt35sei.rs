@@ -4,10 +4,9 @@
 //! - Port note: Group 08 / Case 36
 
 #[test]
-#[ignore = "TODO: missing SEI parsing API in h265nal-sys"]
 fn test_user_data_registered_itu_t_t35_sei() {
     // Test data for user data registered ITU-T T.35 SEI
-    let _buffer = [
+    let buffer = [
         0x04, 0x47, 0xb5, 0x00, 0x31, 0x47, 0x41, 0x39, 0x34, 0x03, 0x54, 0x00, 0xfc, 0x80, 0x80,
         0xfd, 0x80, 0x80, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00,
         0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00,
@@ -15,15 +14,13 @@ fn test_user_data_registered_itu_t_t35_sei() {
         0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xfa, 0x00, 0x00, 0xff,
     ];
 
-    // TODO: Implement SEI parsing API in h265nal-sys
-    // auto sei_message = H265SeiMessageParser::ParseSei(buffer, arraysize(buffer));
-    // EXPECT_TRUE(sei_message != nullptr);
-    // EXPECT_EQ(sei_message->payload_type, h265nal::SeiType::user_data_registered_itu_t_t35);
-    // EXPECT_EQ(sei_message->payload_size, 71);
-    // auto user_data_registered_itu_t_t35_sei = dynamic_cast<H265SeiUserDataRegisteredItuTT35Parser::H265SeiUserDataRegisteredItuTT35State*>(sei_message->payload_state.get());
-    // EXPECT_TRUE(user_data_registered_itu_t_t35_sei != nullptr);
-    // EXPECT_EQ(user_data_registered_itu_t_t35_sei->itu_t_t35_country_code, 181);
-    // EXPECT_EQ(user_data_registered_itu_t_t35_sei->itu_t_t35_country_code_extension_byte, 0);
-
-    todo!("SEI parsing API not yet implemented in h265nal-sys");
+    let sei = h265nal_sys::sei_parse(&buffer).expect("ParseSei failed");
+    assert_eq!(sei.payload_type, 4);
+    assert_eq!(sei.payload_size, 71);
+    assert_eq!(sei.has_user_data_registered_itu_t_t35, 1);
+    assert_eq!(sei.user_data_registered_itu_t_t35_country_code, 181);
+    assert_eq!(
+        sei.user_data_registered_itu_t_t35_country_code_extension_byte,
+        0
+    );
 }

@@ -24,6 +24,9 @@ Sequenced progress report (CLI + C ABI + renderers + docker parity checks):
 Native suite wrapper pass report:
 - `docs/reports/2026-03-03-native-suite-wrapper-pass1.report.md`
 
+C ABI divergence tracker:
+- `docs/reports/2026-03-04-c-abi-divergence-tracker.report.md`
+
 ## Reporting Standards
 - Use one report file per implementation slice and include exact validation commands.
 - Record durable decisions with `[DECISION]`, temporary shortcuts with `[HACK]`, and hard blockers with `[BLOCKER]`.

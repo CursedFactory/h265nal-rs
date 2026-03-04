@@ -16,13 +16,13 @@
 - [x] Group 03 (cases 11-15)
 - [x] Group 04 (cases 16-20)
 - [x] Group 05 (cases 21-25)
-- [ ] Group 06 (cases 26-30) - in progress
-- [ ] Group 07 (cases 31-35)
-- [ ] Group 08 (cases 36-40)
-- [ ] Group 09 (cases 41-45)
-- [ ] Group 10 (cases 46-50)
-- [ ] Group 11 (cases 51-55)
-- [ ] Group 12 (cases 56-59)
+- [x] Group 06 (cases 26-30)
+- [x] Group 07 (cases 31-35)
+- [x] Group 08 (cases 36-40)
+- [x] Group 09 (cases 41-45)
+- [x] Group 10 (cases 46-50)
+- [x] Group 11 (cases 51-55)
+- [x] Group 12 (cases 56-59)
 
 ## Group 01
 | Case | Markdown path | C++ source | Intern command |
@@ -139,14 +139,21 @@
 | Group 03 | 2026-03-04T03:35:07Z | 2026-03-04T03:35:07Z | Case files created for configuration-box, HRD, and NAL-unit coverage; currently ignored pending parser APIs. |
 | Group 04 | 2026-03-04T03:35:07Z | 2026-03-04T03:37:05Z | All 5 case files created; currently ignored pending PPS/pred-weight parser APIs. |
 | Group 05 | 2026-03-04T03:37:05Z | 2026-03-04T03:39:09Z | All 5 case files created; currently ignored pending pred-weight/profile-tier-level/RTP parser APIs. |
-| Group 06 | 2026-03-04T03:39:09Z |  | Parallel intern fanout started (5 cases). |
+| Group 06 | 2026-03-04T03:39:09Z | 2026-03-04T03:50:40Z | All 5 case files created; currently ignored pending RTP parser APIs (FU/AP/single/parser). |
 | Between-group API closure (G03-G05) | 2026-03-04T03:39:09Z | 2026-03-04T04:10:00Z | Added NAL helper/parse core, profile_tier_level parse, and PPS parse C/Rust APIs; unlocked Case13, Case14, Case17, Case22, and Case23. |
-| Group 07 |  |  |  |
-| Group 08 |  |  |  |
-| Group 09 |  |  |  |
-| Group 10 |  |  |  |
-| Group 11 |  |  |  |
-| Group 12 |  |  |  |
+| Between-group API closure (G08-G10) | 2026-03-04T04:10:00Z | 2026-03-04T05:20:00Z | Added SPS parse, slice-segment-layer parse, SEI baseline (user-data-unregistered), and SPS multilayer extension APIs; unlocked Cases37, 38, 39, 40, 41, 43, 44, and 45. |
+| Group 07 | 2026-03-04T03:50:40Z | 2026-03-04T03:52:47Z | All 5 case files created; currently ignored pending RTP-single/scaling-list-data/SEI parser APIs. |
+| Group 08 | 2026-03-04T03:52:47Z | 2026-03-04T03:54:52Z | All 5 case files created; currently ignored pending SEI and slice-segment-layer parser APIs. |
+| Group 09 | 2026-03-04T03:54:52Z | 2026-03-04T03:56:49Z | All 5 case files created; currently ignored pending slice-segment-layer/SPS-extension/SPS parser APIs. |
+| Group 10 | 2026-03-04T03:56:49Z | 2026-03-04T04:11:16Z | Cases 46/47 now running; cases 48/49/50 created and ignored pending SPS range/SCC/ST-ref-pic-set parser APIs. |
+| Group 11 | 2026-03-04T04:11:16Z | 2026-03-04T04:14:09Z | Cases 52/53/54 now running; cases 51/55 created and ignored pending sub-layer-HRD and VPS parser APIs. |
+| Group 12 | 2026-03-04T04:14:09Z | 2026-03-04T04:15:52Z | All 4 case files created; currently ignored pending VPS and VUI parser APIs. |
+| API closure pass (Cases 51, 55-59) | 2026-03-04T05:20:00Z | 2026-03-04T06:30:00Z | minimal C changes: implemented existing declared symbols only (`h265nal_sub_layer_hrd_parameters_parse`, `h265nal_vps_parse`, `h265nal_vui_parameters_parse`), added Rust wrappers, and unignored corresponding tests. |
+| API closure pass (SEI Cases 33-36) | 2026-03-04T06:30:00Z | 2026-03-04T07:20:00Z | minimal C changes: expanded existing `h265nal_sei_parse` + `h265nal_sei_message_fields` only (no new symbols), updated Rust SEI wrappers, and unignored SEI tests for alpha/content-light/mastering-display/registered-itu-t-t35. |
+| API closure pass (RTP Cases 24-31) | 2026-03-04T07:20:00Z | 2026-03-04T08:20:00Z | Added one generic RTP ABI entrypoint (`h265nal_rtp_parse`) plus one flattened struct (`h265nal_rtp_fields`), added Rust `rtp_parse` wrapper, and unignored RTP-family tests. |
+| API closure pass (Cases 32, 42, 48, 49, 50) | 2026-03-04T08:20:00Z | 2026-03-04T09:10:00Z | Added minimal non-RTP parser-extension ABI (`scaling_list_data`, `sps_3d_extension`, `sps_range_extension`, `sps_scc_extension`, `st_ref_pic_set`) with flattened asserted fields, added Rust wrappers, and unignored 5 target tests. |
+| API closure pass (Cases 16, 18, 19, 20, 21) | 2026-03-04T09:10:00Z | 2026-03-04T09:55:00Z | Added focused ABI for PPS multilayer extension, PPS SCC extension, and pred-weight table (asserted fields only), added Rust wrappers, and unignored the five Group04/Group05 target tests. |
+| Final closure pass (Cases 02, 04, 05, 11, 12, 15) | 2026-03-04T09:55:00Z | 2026-03-04T11:15:00Z | Added shared bitstream parse bridge (`h265nal_bitstream_parse`), configuration-box + HRD parser bridges, and nal checksum bytes; wired Rust wrappers and unignored remaining Group01/Group03 skipped tests. |
 
 ## Counts Check
 - Groups in this file: 12

@@ -4,7 +4,6 @@
 //! - Port note: Group 08 / Case 38
 
 #[test]
-#[ignore = "TODO: missing slice_segment_layer_parse API"]
 fn test_sample_slice() {
     // fuzzer::conv: data
     let buffer = [
@@ -13,32 +12,22 @@ fn test_sample_slice() {
         0xf0, 0x46, 0x61, 0x93, 0x72, 0xd6, 0xfc, 0x35, 0xe3, 0xc5,
     ];
 
-    // fuzzer::conv: begin
-    // get some mock state
-    let mut bitstream_parser_state =
-        h265nal_sys::BitstreamParserState::new().expect("BitstreamParserState creation failed");
-    // TODO: set up vps, sps, pps in state
-    // auto vps = std::make_shared<H265VpsParser::VpsState>();
-    // bitstream_parser_state.vps[0] = vps;
-    // auto sps = std::make_shared<H265SpsParser::SpsState>();
-    // sps->sample_adaptive_offset_enabled_flag = 1;
-    // sps->chroma_format_idc = 1;
-    // bitstream_parser_state.sps[0] = sps;
-    // auto pps = std::make_shared<H265PpsParser::PpsState>();
-    // bitstream_parser_state.pps[0] = pps;
+    let mut state = h265nal_sys::BitstreamParserState::new().expect("state create failed");
+    state.seed_vps(0).expect("seed_vps failed");
+    state
+        .seed_sps(0, 1, 1, 0, 0, 0, 0)
+        .expect("seed_sps failed");
+    state.seed_pps(0).expect("seed_pps failed");
 
-    // TODO: auto slice_segment_layer = H265SliceSegmentLayerParser::ParseSliceSegmentLayer(buffer, arraysize(buffer), NalUnitType::IDR_W_RADL, &bitstream_parser_state);
-    // TODO: EXPECT_TRUE(slice_segment_layer != nullptr);
+    let slice = h265nal_sys::slice_segment_layer_parse(&buffer, 19, &mut state)
+        .expect("ParseSliceSegmentLayer failed");
 
-    // TODO: auto& slice_segment_header = slice_segment_layer->slice_segment_header;
-
-    // TODO: EXPECT_EQ(1, slice_segment_header->first_slice_segment_in_pic_flag);
-    // TODO: EXPECT_EQ(0, slice_segment_header->no_output_of_prior_pics_flag);
-    // TODO: EXPECT_EQ(0, slice_segment_header->slice_pic_parameter_set_id);
-    // TODO: EXPECT_EQ(2, slice_segment_header->slice_type);
-    // TODO: EXPECT_EQ(1, slice_segment_header->slice_sao_luma_flag);
-    // TODO: EXPECT_EQ(1, slice_segment_header->slice_sao_chroma_flag);
-    // TODO: EXPECT_EQ(9, slice_segment_header->slice_qp_delta);
-
-    // fuzzer::conv: end
+    assert_eq!(slice.has_slice_segment_header, 1);
+    assert_eq!(slice.first_slice_segment_in_pic_flag, 1);
+    assert_eq!(slice.no_output_of_prior_pics_flag, 0);
+    assert_eq!(slice.slice_pic_parameter_set_id, 0);
+    assert_eq!(slice.slice_type, 2);
+    assert_eq!(slice.slice_sao_luma_flag, 1);
+    assert_eq!(slice.slice_sao_chroma_flag, 1);
+    assert_eq!(slice.slice_qp_delta, 9);
 }

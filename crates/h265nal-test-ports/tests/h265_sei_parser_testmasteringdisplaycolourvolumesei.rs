@@ -3,8 +3,6 @@
 //! - C++: `test/h265_sei_parser_unittest.cc:96`
 //! - Port note: Group 07 / Case 35
 
-// TODO: Add SEI parsing APIs to h265nal-sys
-#[ignore = "TODO: missing SEI parsing APIs in h265nal-sys"]
 #[test]
 fn test_mastering_display_colour_volume_sei() {
     // Test data for mastering display colour volume SEI
@@ -23,19 +21,21 @@ fn test_mastering_display_colour_volume_sei() {
         0x00, 0x00, 0x00, 0x32, // min_display_mastering_luminance = 50 (0.005 cd/m^2)
     ];
 
-    // TODO: sei_message = h265nal_sys::sei_parse(&buffer).expect("ParseSei failed");
-    // TODO: assert!(sei_message.is_some());
-    // TODO: assert_eq!(sei_message.payload_type, 137); // SeiType::mastering_display_colour_volume
-    // TODO: assert_eq!(sei_message.payload_size, 24);
-    // TODO: let mastering_display_sei = sei_message.payload_state.as_ref().unwrap().downcast_ref::<MasteringDisplayColourVolumeState>().unwrap();
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_x[0], 0x8449);
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_y[0], 0x7d00);
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_x[1], 0x335c);
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_y[1], 0xa9c2);
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_x[2], 0x1d4c);
-    // TODO: assert_eq!(mastering_display_sei.display_primaries_y[2], 0x0bb8);
-    // TODO: assert_eq!(mastering_display_sei.white_point_x, 0x3e80);
-    // TODO: assert_eq!(mastering_display_sei.white_point_y, 0x4650);
-    // TODO: assert_eq!(mastering_display_sei.max_display_mastering_luminance, 10000000);
-    // TODO: assert_eq!(mastering_display_sei.min_display_mastering_luminance, 50);
+    let sei = h265nal_sys::sei_parse(&buffer).expect("ParseSei failed");
+    assert_eq!(sei.payload_type, 137);
+    assert_eq!(sei.payload_size, 24);
+    assert_eq!(sei.has_mastering_display_colour_volume, 1);
+    assert_eq!(sei.mastering_display_display_primaries_x[0], 0x8449);
+    assert_eq!(sei.mastering_display_display_primaries_y[0], 0x7d00);
+    assert_eq!(sei.mastering_display_display_primaries_x[1], 0x335c);
+    assert_eq!(sei.mastering_display_display_primaries_y[1], 0xa9c2);
+    assert_eq!(sei.mastering_display_display_primaries_x[2], 0x1d4c);
+    assert_eq!(sei.mastering_display_display_primaries_y[2], 0x0bb8);
+    assert_eq!(sei.mastering_display_white_point_x, 0x3e80);
+    assert_eq!(sei.mastering_display_white_point_y, 0x4650);
+    assert_eq!(
+        sei.mastering_display_max_display_mastering_luminance,
+        10000000
+    );
+    assert_eq!(sei.mastering_display_min_display_mastering_luminance, 50);
 }

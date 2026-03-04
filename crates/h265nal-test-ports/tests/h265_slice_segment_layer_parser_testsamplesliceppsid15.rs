@@ -2,14 +2,9 @@
 //! - Markdown: `docs/test-cases/h265_slice_parser_unittest/h265slicesegmentlayerparsertest--testsamplesliceppsid15.md`
 //! - C++: `test/h265_slice_parser_unittest.cc:128`
 
-#[ignore = "TODO: missing slice_segment_layer_parse API in h265nal-sys"]
 #[test]
 fn test_sample_slice_pps_id15() {
-    // TODO: implement slice_segment_layer_parse in h265nal-sys
-    // The C++ test sets up bitstream_parser_state with vps, sps, pps and calls ParseSliceSegmentLayer
-    // Then asserts slice_segment_layer is non-null, slice_segment_header is non-null, and nal_unit_type == 19
-
-    let _buffer = [
+    let buffer = [
         0x02, 0x01, 0xd2, 0x78, 0xf7, 0x55, 0xdc, 0xbf, 0x2c, 0x44, 0x00, 0x41, 0xa8, 0xd1, 0x66,
         0x44, 0xb3, 0x12, 0x93, 0xbc, 0x96, 0x54, 0x62, 0x42, 0x53, 0xee, 0xd6, 0x14, 0x3a, 0xf4,
         0x39, 0xfd, 0x9a, 0x61, 0x28, 0xe2, 0x52, 0x7b, 0x50, 0x48, 0x4d, 0x1c, 0xe3, 0xc5, 0x63,
@@ -23,19 +18,16 @@ fn test_sample_slice_pps_id15() {
         0x28, 0x48, 0x34, 0x46, 0x01, 0x56, 0xdd, 0xae, 0x93, 0x19,
     ];
 
-    // TODO: set up bitstream parser state with vps[0], sps[0], pps[15]
-    // let mut state = BitstreamParserState::new();
-    // TODO: populate state.vps[0], state.sps[0], state.pps[15]
+    let mut state = h265nal_sys::BitstreamParserState::new().expect("state create failed");
+    state.seed_vps(0).expect("seed_vps failed");
+    state
+        .seed_sps(0, 1, 1, 0, 2, 1280, 736)
+        .expect("seed_sps failed");
+    state.seed_pps(15).expect("seed_pps failed");
 
-    // TODO: call slice_segment_layer_parse with buffer, NalUnitType::IDR_W_RADL (19), &state
-    // let slice_segment_layer = h265nal_sys::slice_segment_layer_parse(&buffer, 19, &state).expect("Parse failed");
+    let slice = h265nal_sys::slice_segment_layer_parse(&buffer, 19, &mut state)
+        .expect("ParseSliceSegmentLayer failed");
 
-    // TODO: assert slice_segment_layer is some
-    // assert!(slice_segment_layer.is_some());
-
-    // TODO: assert slice_segment_header is some
-    // let slice_segment_header = slice_segment_layer.as_ref().unwrap().slice_segment_header.as_ref().unwrap();
-
-    // TODO: assert nal_unit_type == 19
-    // assert_eq!(slice_segment_header.nal_unit_type, 19);
+    assert_eq!(slice.has_slice_segment_header, 1);
+    assert_eq!(slice.nal_unit_type, 19);
 }

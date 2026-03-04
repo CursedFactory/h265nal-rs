@@ -81,6 +81,87 @@ pub(crate) struct RawNalUnitFields {
     pub nuh_temporal_id_plus1: u32,
 }
 
+#[repr(C)]
+pub(crate) struct RawSpsFields {
+    pub sps_video_parameter_set_id: u32,
+    pub sps_max_sub_layers_minus1: u32,
+    pub sps_temporal_id_nesting_flag: u32,
+    pub profile_tier_level: RawProfileTierLevelFields,
+    pub sps_seq_parameter_set_id: u32,
+    pub chroma_format_idc: u32,
+    pub pic_width_in_luma_samples: u32,
+    pub pic_height_in_luma_samples: u32,
+    pub conformance_window_flag: u32,
+    pub conf_win_left_offset: u32,
+    pub conf_win_right_offset: u32,
+    pub conf_win_top_offset: u32,
+    pub conf_win_bottom_offset: u32,
+    pub bit_depth_luma_minus8: u32,
+    pub bit_depth_chroma_minus8: u32,
+    pub log2_max_pic_order_cnt_lsb_minus4: u32,
+    pub sps_sub_layer_ordering_info_present_flag: u32,
+    pub sps_max_dec_pic_buffering_minus1_0: u32,
+    pub sps_max_num_reorder_pics_0: u32,
+    pub sps_max_latency_increase_plus1_0: u32,
+    pub scaling_list_enabled_flag: u32,
+    pub amp_enabled_flag: u32,
+    pub sample_adaptive_offset_enabled_flag: u32,
+    pub pcm_enabled_flag: u32,
+    pub num_short_term_ref_pic_sets: u32,
+    pub long_term_ref_pics_present_flag: u32,
+    pub sps_temporal_mvp_enabled_flag: u32,
+    pub strong_intra_smoothing_enabled_flag: u32,
+    pub vui_parameters_present_flag: u32,
+    pub vui_video_signal_type_present_flag: u32,
+    pub vui_video_format: u32,
+    pub vui_video_full_range_flag: u32,
+    pub vui_colour_description_present_flag: u32,
+    pub vui_colour_primaries: u32,
+    pub vui_transfer_characteristics: u32,
+    pub vui_matrix_coeffs: u32,
+    pub vui_bitstream_restriction_flag: u32,
+    pub vui_max_bytes_per_pic_denom: u32,
+    pub vui_max_bits_per_min_cu_denom: u32,
+    pub vui_log2_max_mv_length_horizontal: u32,
+    pub vui_log2_max_mv_length_vertical: u32,
+    pub sps_extension_present_flag: u32,
+    pub sps_range_extension_flag: u32,
+    pub sps_multilayer_extension_flag: u32,
+    pub sps_3d_extension_flag: u32,
+    pub sps_scc_extension_flag: u32,
+    pub sps_extension_4bits: u32,
+    pub pic_size_in_ctbs_y: u32,
+}
+
+#[repr(C)]
+pub(crate) struct RawSliceSegmentLayerFields {
+    pub has_slice_segment_header: u32,
+    pub nal_unit_type: u32,
+    pub first_slice_segment_in_pic_flag: u32,
+    pub no_output_of_prior_pics_flag: u32,
+    pub slice_pic_parameter_set_id: u32,
+    pub slice_segment_address: u32,
+    pub slice_type: u32,
+    pub slice_sao_luma_flag: u32,
+    pub slice_sao_chroma_flag: u32,
+    pub slice_qp_delta: i32,
+    pub num_entry_point_offsets: u32,
+}
+
+#[repr(C)]
+pub(crate) struct RawSeiMessageFields {
+    pub payload_type: i32,
+    pub payload_size: u32,
+    pub has_user_data_unregistered: u32,
+    pub user_data_unregistered_uuid_iso_iec_11578_1: u64,
+    pub user_data_unregistered_uuid_iso_iec_11578_2: u64,
+}
+
+#[repr(C)]
+pub(crate) struct RawSpsMultilayerExtensionFields {
+    pub inter_view_mv_vert_constraint_flag: u32,
+}
+
 unsafe extern "C" {
     pub(crate) fn h265nal_annexb_count_nalus(
         data: *const u8,
@@ -159,6 +240,50 @@ unsafe extern "C" {
 
     pub(crate) fn h265nal_pps_parse(data: *const u8, len: usize, out_pps: *mut RawPpsFields)
         -> i32;
+
+    pub(crate) fn h265nal_sps_parse(data: *const u8, len: usize, out_sps: *mut RawSpsFields)
+        -> i32;
+
+    pub(crate) fn h265nal_bitstream_parser_state_seed_vps(
+        state: *mut RawBitstreamParserState,
+        vps_id: u32,
+    ) -> i32;
+
+    pub(crate) fn h265nal_bitstream_parser_state_seed_sps(
+        state: *mut RawBitstreamParserState,
+        sps_id: u32,
+        sample_adaptive_offset_enabled_flag: u32,
+        chroma_format_idc: u32,
+        log2_min_luma_coding_block_size_minus3: u32,
+        log2_diff_max_min_luma_coding_block_size: u32,
+        pic_width_in_luma_samples: u32,
+        pic_height_in_luma_samples: u32,
+    ) -> i32;
+
+    pub(crate) fn h265nal_bitstream_parser_state_seed_pps(
+        state: *mut RawBitstreamParserState,
+        pps_id: u32,
+    ) -> i32;
+
+    pub(crate) fn h265nal_slice_segment_layer_parse(
+        data: *const u8,
+        len: usize,
+        nal_unit_type: u32,
+        state: *mut RawBitstreamParserState,
+        out_slice_segment_layer: *mut RawSliceSegmentLayerFields,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sei_parse(
+        data: *const u8,
+        len: usize,
+        out_sei_message: *mut RawSeiMessageFields,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sps_multilayer_extension_parse(
+        data: *const u8,
+        len: usize,
+        out_sps_multilayer_extension: *mut RawSpsMultilayerExtensionFields,
+    ) -> i32;
 
     pub(crate) fn h265nal_abi_version() -> u32;
 }

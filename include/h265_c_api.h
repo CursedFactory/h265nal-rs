@@ -103,6 +103,87 @@ typedef struct h265nal_nal_unit_fields {
   uint32_t nuh_temporal_id_plus1;
 } h265nal_nal_unit_fields;
 
+// DIVERGENCE: flattened SPS scalar fields for Rust parity tests.
+typedef struct h265nal_sps_fields {
+  uint32_t sps_video_parameter_set_id;
+  uint32_t sps_max_sub_layers_minus1;
+  uint32_t sps_temporal_id_nesting_flag;
+  h265nal_profile_tier_level_fields profile_tier_level;
+  uint32_t sps_seq_parameter_set_id;
+  uint32_t chroma_format_idc;
+  uint32_t pic_width_in_luma_samples;
+  uint32_t pic_height_in_luma_samples;
+  uint32_t conformance_window_flag;
+  uint32_t conf_win_left_offset;
+  uint32_t conf_win_right_offset;
+  uint32_t conf_win_top_offset;
+  uint32_t conf_win_bottom_offset;
+  uint32_t bit_depth_luma_minus8;
+  uint32_t bit_depth_chroma_minus8;
+  uint32_t log2_max_pic_order_cnt_lsb_minus4;
+  uint32_t sps_sub_layer_ordering_info_present_flag;
+  uint32_t sps_max_dec_pic_buffering_minus1_0;
+  uint32_t sps_max_num_reorder_pics_0;
+  uint32_t sps_max_latency_increase_plus1_0;
+  uint32_t scaling_list_enabled_flag;
+  uint32_t amp_enabled_flag;
+  uint32_t sample_adaptive_offset_enabled_flag;
+  uint32_t pcm_enabled_flag;
+  uint32_t num_short_term_ref_pic_sets;
+  uint32_t long_term_ref_pics_present_flag;
+  uint32_t sps_temporal_mvp_enabled_flag;
+  uint32_t strong_intra_smoothing_enabled_flag;
+  uint32_t vui_parameters_present_flag;
+  uint32_t vui_video_signal_type_present_flag;
+  uint32_t vui_video_format;
+  uint32_t vui_video_full_range_flag;
+  uint32_t vui_colour_description_present_flag;
+  uint32_t vui_colour_primaries;
+  uint32_t vui_transfer_characteristics;
+  uint32_t vui_matrix_coeffs;
+  uint32_t vui_bitstream_restriction_flag;
+  uint32_t vui_max_bytes_per_pic_denom;
+  uint32_t vui_max_bits_per_min_cu_denom;
+  uint32_t vui_log2_max_mv_length_horizontal;
+  uint32_t vui_log2_max_mv_length_vertical;
+  uint32_t sps_extension_present_flag;
+  uint32_t sps_range_extension_flag;
+  uint32_t sps_multilayer_extension_flag;
+  uint32_t sps_3d_extension_flag;
+  uint32_t sps_scc_extension_flag;
+  uint32_t sps_extension_4bits;
+  uint32_t pic_size_in_ctbs_y;
+} h265nal_sps_fields;
+
+// DIVERGENCE: flattened slice-segment-layer header fields for Rust parity tests.
+typedef struct h265nal_slice_segment_layer_fields {
+  uint32_t has_slice_segment_header;
+  uint32_t nal_unit_type;
+  uint32_t first_slice_segment_in_pic_flag;
+  uint32_t no_output_of_prior_pics_flag;
+  uint32_t slice_pic_parameter_set_id;
+  uint32_t slice_segment_address;
+  uint32_t slice_type;
+  uint32_t slice_sao_luma_flag;
+  uint32_t slice_sao_chroma_flag;
+  int32_t slice_qp_delta;
+  uint32_t num_entry_point_offsets;
+} h265nal_slice_segment_layer_fields;
+
+// DIVERGENCE: SEI baseline fields for user-data-unregistered parity tests.
+typedef struct h265nal_sei_message_fields {
+  int32_t payload_type;
+  uint32_t payload_size;
+  uint32_t has_user_data_unregistered;
+  uint64_t user_data_unregistered_uuid_iso_iec_11578_1;
+  uint64_t user_data_unregistered_uuid_iso_iec_11578_2;
+} h265nal_sei_message_fields;
+
+// DIVERGENCE: flattened SPS multilayer extension fields for Rust parity tests.
+typedef struct h265nal_sps_multilayer_extension_fields {
+  uint32_t inter_view_mv_vert_constraint_flag;
+} h265nal_sps_multilayer_extension_fields;
+
 int h265nal_annexb_count_nalus(const uint8_t* data,
                                size_t len,
                                size_t* out_count);
@@ -175,6 +256,48 @@ int h265nal_profile_tier_level_parse(
 int h265nal_pps_parse(const uint8_t* data,
                       size_t len,
                       h265nal_pps_fields* out_pps);
+
+// DIVERGENCE: expose `H265SpsParser::ParseSps` scalar/derived fields.
+int h265nal_sps_parse(const uint8_t* data,
+                      size_t len,
+                      h265nal_sps_fields* out_sps);
+
+// DIVERGENCE: expose state seeding helpers for slice parser parity tests.
+int h265nal_bitstream_parser_state_seed_vps(h265nal_bitstream_parser_state* state,
+                                            uint32_t vps_id);
+
+// DIVERGENCE: expose state seeding helpers for slice parser parity tests.
+int h265nal_bitstream_parser_state_seed_sps(h265nal_bitstream_parser_state* state,
+                                            uint32_t sps_id,
+                                            uint32_t sample_adaptive_offset_enabled_flag,
+                                            uint32_t chroma_format_idc,
+                                            uint32_t log2_min_luma_coding_block_size_minus3,
+                                            uint32_t log2_diff_max_min_luma_coding_block_size,
+                                            uint32_t pic_width_in_luma_samples,
+                                            uint32_t pic_height_in_luma_samples);
+
+// DIVERGENCE: expose state seeding helpers for slice parser parity tests.
+int h265nal_bitstream_parser_state_seed_pps(h265nal_bitstream_parser_state* state,
+                                            uint32_t pps_id);
+
+// DIVERGENCE: expose `H265SliceSegmentLayerParser::ParseSliceSegmentLayer` fields.
+int h265nal_slice_segment_layer_parse(
+    const uint8_t* data,
+    size_t len,
+    uint32_t nal_unit_type,
+    h265nal_bitstream_parser_state* state,
+    h265nal_slice_segment_layer_fields* out_slice_segment_layer);
+
+// DIVERGENCE: expose `H265SeiMessageParser::ParseSei` baseline fields.
+int h265nal_sei_parse(const uint8_t* data,
+                      size_t len,
+                      h265nal_sei_message_fields* out_sei_message);
+
+// DIVERGENCE: expose `H265SpsMultilayerExtensionParser::ParseSpsMultilayerExtension`.
+int h265nal_sps_multilayer_extension_parse(
+    const uint8_t* data,
+    size_t len,
+    h265nal_sps_multilayer_extension_fields* out_sps_multilayer_extension);
 
 uint32_t h265nal_abi_version(void);
 

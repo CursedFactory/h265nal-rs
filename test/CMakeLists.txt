@@ -1,7 +1,17 @@
 # add executable
 #add_executable(main main.cc)
 
-find_package(GTest REQUIRED)
+find_package(GTest QUIET)
+if(NOT GTest_FOUND)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  )
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+  include_directories(PUBLIC ${googletest_SOURCE_DIR}/googlemock/include)
+endif()
 
 include_directories(PUBLIC ../src)
 

@@ -9,8 +9,11 @@ project(h265nal VERSION 0.53)
 # std::make_ptr requires C++14
 set(CMAKE_CXX_STANDARD 14)
 
-# set up clang-tidy
-set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-format-style='google'")
+# set up clang-tidy when available
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+if(CLANG_TIDY_EXE)
+  set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-format-style='google'")
+endif()
 if(WIN32)
   # Designated initializers throughout project requires C++20 on windows
   set(CMAKE_CXX_STANDARD 20)

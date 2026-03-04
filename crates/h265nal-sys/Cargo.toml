@@ -2,6 +2,11 @@
 name = "h265nal-sys"
 version.workspace = true
 edition = "2021"
+description = "Rust FFI bindings for the h265nal C++ HEVC/H.265 parser"
+license = "BSD-3-Clause"
+repository = "https://github.com/CursedFactory/h265nal-rs"
+homepage = "https://github.com/CursedFactory/h265nal-rs"
+documentation = "https://docs.rs/h265nal-sys"
 links = "h265nal"
 build = "build.rs"
 

@@ -2,6 +2,11 @@
 name = "h265nal-cli"
 version.workspace = true
 edition = "2021"
+description = "CLI for parsing HEVC/H.265 bitstreams with h265nal"
+license = "BSD-3-Clause"
+repository = "https://github.com/CursedFactory/h265nal-rs"
+homepage = "https://github.com/CursedFactory/h265nal-rs"
+documentation = "https://docs.rs/h265nal-cli"
 
 [[bin]]
 name = "h265nal-cli"

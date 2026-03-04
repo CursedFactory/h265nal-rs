@@ -1,322 +1,137 @@
-# h265nal: A Library and Tool to parse H265 NAL units
+# h265nal-rs
 
-By [Chema Gonzalez](https://github.com/chemag), 2020-09-11
+Rust workspace for HEVC/H.265 NAL parsing with:
 
+- `h265nal-sys`: Rust bindings over the upstream C++ parser
+- `h265nal-cli`: Rust CLI front-end for parsing and rendering output
+- parity and test-port crates for compatibility validation
 
-# 1. Rationale
-This document describes h265nal, a simpler H265 NAL unit parser.
+The original upstream C++ project docs are preserved in `README.og.md`.
 
-Final goal it to create a binary that accepts a file in h265 Annex B format
-(.265) and dumps the contents of the parsed NALs.
+## Workspace Layout
 
-[h264nal](https://github.com/chemag/h264nal) is a similar project to parse
-H264 NAL units.
+- `crates/h265nal-sys`: FFI surface and typed Rust wrappers
+- `crates/h265nal-cli`: command-line parsing tool
+- `crates/h265nal-parity`: C++ vs Rust CLI parity checks and reports
+- `crates/h265nal-test-ports`: ported test coverage from upstream C++ tests
+- `docker/`: parity execution containers
 
+## Build
 
-# 2. Install Instructions
-
-Get the git repo, and then build using cmake.
-
-```
-$ git clone https://github.com/chemag/h265nal
-$ cd h265nal
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
+```bash
+cargo build
 ```
 
-Some cmake options:
-* "`cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo`":
-* "`cmake -DBUILD_H264_TESTS=OFF`": do not build the tests
-* "`cmake -DBUILD_CLANG_FUZZER=OFF`": do not build the fuzzing tests
+Release build:
 
-
-Feel free to test all the unittests:
-
-```
-$ make test
-Running tests...
-Test project h265nal/build
-      Start  1: h265_profile_tier_level_parser_unittest
- 1/10 Test  #1: h265_profile_tier_level_parser_unittest ...   Passed    0.00 sec
-      Start  2: h265_vps_parser_unittest
- 2/10 Test  #2: h265_vps_parser_unittest ..................   Passed    0.00 sec
-      Start  3: h265_vui_parameters_parser_unittest
- 3/10 Test  #3: h265_vui_parameters_parser_unittest .......   Passed    0.00 sec
-      Start  4: h265_st_ref_pic_set_parser_unittest
- 4/10 Test  #4: h265_st_ref_pic_set_parser_unittest .......   Passed    0.00 sec
-      Start  5: h265_sps_parser_unittest
- 5/10 Test  #5: h265_sps_parser_unittest ..................   Passed    0.00 sec
-      Start  6: h265_pps_parser_unittest
- 6/10 Test  #6: h265_pps_parser_unittest ..................   Passed    0.00 sec
-      Start  7: h265_aud_parser_unittest
- 7/10 Test  #7: h265_aud_parser_unittest ..................   Passed    0.00 sec
-      Start  8: h265_slice_parser_unittest
- 8/10 Test  #8: h265_slice_parser_unittest ................   Passed    0.00 sec
-      Start  9: h265_bitstream_parser_unittest
- 9/10 Test  #9: h265_bitstream_parser_unittest ............   Passed    0.00 sec
-      Start 10: h265_nal_unit_parser_unittest
-10/10 Test #10: h265_nal_unit_parser_unittest .............   Passed    0.00 sec
-
-100% tests passed, 0 tests failed out of 10
-
-Total Test time (real) =   0.04 sec
+```bash
+cargo build --release
 ```
 
-Or to test any of the unittests:
+Notes:
 
-```
-$ ./test/h265_profile_tier_level_parser_unittest
-Running main() from /builddir/build/BUILD/googletest-release-1.8.1/googletest/src/gtest_main.cc
-[==========] Running 1 test from 1 test case.
-[----------] Global test environment set-up.
-[----------] 1 test from H265ProfileTierLevelParserTest
-[ RUN      ] H265ProfileTierLevelParserTest.TestSampleValue
-[       OK ] H265ProfileTierLevelParserTest.TestSampleValue (0 ms)
-[----------] 1 test from H265ProfileTierLevelParserTest (0 ms total)
+- `h265nal-sys` builds the C++ parser via CMake from `build.rs`.
+- You do not need to pre-build the C++ project manually.
 
-[----------] Global test environment tear-down
-[==========] 1 test from 1 test case ran. (0 ms total)
-[  PASSED  ] 1 test.
+## Test
+
+Primary runner is `nextest`:
+
+```bash
+cargo nextest run
 ```
 
-Check the included vector file:
+Per crate:
 
-```
-$ ./tools/h265nal ../media/foo.265
-h265nal: original version
-nal_unit { nal_unit_header { forbidden_zero_bit: 0 nal_unit_type: 39 nuh_layer_id: 0 nuh_temporal_id_plus1: 1 } nal_unit_payload {  } }
-...
-nal_unit { nal_unit_header { forbidden_zero_bit: 0 nal_unit_type: 0 nuh_layer_id: 0 nuh_temporal_id_plus1: 1 } nal_unit_payload { slice_segment_layer { slice_segment_header { first_slice_segment_in_pic_flag: 1 no_output_of_prior_pics_flag: 0 slice_pic_parameter_set_id: 0 dependent_slice_segment_flag: 0 slice_segment_address: 0 slice_reserved_flag { } slice_type: 0 pic_output_flag: 0 colour_plane_id: 0 slice_pic_order_cnt_lsb: 77 short_term_ref_pic_set_sps_flag: 0 st_ref_pic_set { num_negative_pics: 5 num_positive_pics: 1 delta_poc_s0_minus1 { 2 4 2 2 3 } used_by_curr_pic_s0_flag { 1 1 1 1 1 } delta_poc_s1_minus1 { 0 } used_by_curr_pic_s1_flag { 1 } } slice_temporal_mvp_enabled_flag: 1 slice_sao_luma_flag: 1 slice_sao_chroma_flag: 1 num_ref_idx_active_override_flag: 1 num_ref_idx_l0_active_minus1: 4 num_ref_idx_l1_active_minus1: 0 mvd_l1_zero_flag: 0 collocated_from_l0_flag: 0 five_minus_max_num_merge_cand: 1 slice_qp_delta: 15 slice_loop_filter_across_slices_enabled_flag: 0 num_entry_point_offsets: 12 offset_len_minus1: 5 entry_point_offset_minus1 { 10 2 27 9 2 17 14 24 18 21 16 6 } } } } }
+```bash
+cargo nextest run -p h265nal-cli
 ```
 
+Doc tests:
 
-# 3. CLI Binary Operation
-
-Parse all the NAL units of an Annex B (`.265` extension) file.
-
-```
-$ ./tools/h265nal -i file.265 --no-as-one-line --add-length --add-offset
-nal_unit {
-  offset: 0x00000004
-  length: 23
-  nal_unit_header {
-    forbidden_zero_bit: 0
-    nal_unit_type: 32
-    nuh_layer_id: 0
-    nuh_temporal_id_plus1: 1
-  }
-  vps {
-    vps_video_parameter_set_id: 0
-    vps_base_layer_internal_flag: 1
-    vps_base_layer_available_flag: 1
-    vps_max_layers_minus1: 0
-    ...
+```bash
+cargo test --doc
 ```
 
+## Rust CLI (`h265nal-cli`)
 
-# 4. Programmatic Integration Operation
+Run directly from source:
 
-There are 3 ways to integrate the parser in your C++ parser:
-
-## 4.1. Annex B H265, Full-File Parsing
-If you just have a binary blob with the full contents of a file in Annex B
-format, use the `H265BitstreamParser::ParseBitstream()` method. This case
-is useful, for example, when you have an Annex B format file (a file with
-`.265` or `.h265` extension). You read the whole file in memory, and then
-convert the read blob into a set of parsed NAL units.
-
-The following code has been copied from `tools/h265nal.cc`:
-
-```
-// read your .265 file into the vector `buffer`
-std::vector<uint8_t> buffer(size);
-
-// create bitstream parser from the file
-h265nal::ParsingOptions parsing_options;
-std::unique_ptr<h265nal::H265BitstreamParser::BitstreamState> bitstream =
-      h265nal::H265BitstreamParser::ParseBitstream(
-          buffer.data(), buffer.size(), parsing_options);
+```bash
+cargo run -p h265nal-cli -- --infile video/nvenc.265
 ```
 
-The `H265BitstreamParser::ParseBitstream()` function receives a generic
-binary string (`data` and `length`) that you read from the file, plus
-some options (whether to add options, length, and parsed length to each
-NAL units).
+Or with positional input:
 
-It then:
-
-* (1) splits the input string into a vector of NAL units, and
-* (2) parses the NAL units, and add them to the vector
-
-
-## 4.2. NAL-Unit Parsing
-If you have a series of binary blobs with NAL units, use the
-`H265NalUnitParser::ParseNalUnit()` method. This case is useful for example
-if you have a producer of NAL units (e.g. an encoder), and you want to
-parse them as soon as they are produced.
-
-The following code has been copied from `tools/h265nal.cc`:
-
-```
-  // 2. get the indices for the NALUs in the stream. This is needed
-  // because we will read Annex-B files, i.e., a bunch of appended NALUs
-  // with escape sequences used to separate them.
-  auto nalu_indices =
-      h265nal::H265BitstreamParser::FindNaluIndices(data, length);
-
-  // 3. create state for parsing NALUs
-  // bitstream parser state (to keep the SPS/PPS/SubsetSPS NALUs)
-  h265nal::H265BitstreamParserState bitstream_parser_state;
-
-  // 4. parse the NALUs one-by-one
-  auto bitstream =
-      std::make_unique<h265nal::H265BitstreamParser::BitstreamState>();
-  h265nal::ParsingOptions parsing_options;
-  for (const auto &nalu_index : nalu_indices) {
-    // 4.1. parse 1 NAL unit
-    // note: If the NALU comes from an unescaped bitstreams, i.e.,
-    // one with an explicit NALU length mechanism (like mp4 mdat
-    // boxes), the right function is `ParseNalUnitUnescaped()`.
-    auto nal_unit = h265nal::H265NalUnitParser::ParseNalUnit(
-        &data[nalu_index.payload_start_offset], nalu_index.payload_size,
-        &bitstream_parser_state, parsing_options);
-    ...
-  }
+```bash
+cargo run -p h265nal-cli -- video/nvenc.265
 ```
 
-The `H265NalUnitParser::ParseNalUnit()` function receives a generic
-binary string (`data` and `length`) that contains a NAL unit, plus
-a `H265BitstreamParserState` object that keeps all the VPS/SPS/PPS it
-ever sees. It then parses the NAL unit, and returns it (including the
-parsing offsets).
+Useful options:
 
-It will also update the input `H265BitstreamParserState` object if it
-sees any VPS/PPS/SPS. This is important if the parsed NAL unit has state
-that needs to be used to parse other NAL units (VPS, SPS, PPS): In that
-case it will be stored into the `BitstreamParserState` object that is
-passed around.
+- `--output-format c|json|pretty`
+- `--no-as-one-line` for multi-line C-style output
+- `--add-offset --add-length --add-parsed-length`
+- `--add-checksum --add-resolution --add-contents`
+- `--outfile <path>` to write output to file
 
-Note that `H265NalUnitParser::ParseNalUnit()` will only parse 1 NAL unit.
-There are some producers that will instead produce multiple NAL units
-in the output buffer. For example, an h265 encoder producing a key frame
-may return 4 NAL units (VPS, PPS, SPS, and slice header).
+Example JSON output:
 
-
-## 4.3. RTP Packet Parsing
-If you want to just pass consecutive RTP packets (rfc7798 format), and get
-information on their contents, use the `H265RtpParser::ParseRtp` method.
-
-The following code has been copied from `test/h265_rtp_parser_unittest.cc`.
-
+```bash
+cargo run -p h265nal-cli -- \
+  --infile video/nvenc.265 \
+  --output-format json \
+  --add-offset --add-length --add-parsed-length
 ```
-// keep a bitstream parser state (to keep the VPS/PPS/SPS NALUs)
-H265BitstreamParserState bitstream_parser_state;
 
-// parse packet(s)
-std::unique_ptr<H265RtpParser::RtpState> rtp = H265RtpParser::ParseRtp(
-    buffer, arraysize(buffer),
-    &bitstream_parser_state);
+## Rust Library (`h265nal-sys`)
 
-// packets will return the actual contents into `rtp`, and update the
-// bitstream parser state if the RTP packet contains a VPS/SPS/PPS.
+`h265nal-sys` exposes typed wrappers around the C ABI, including helpers for:
 
-// check the main packet contents
-switch (rtp->nal_unit_header.nal_unit_type) {
-  case AP:
-    {
-    // an AP (Aggregation Packet) packet contains 2+ NAL Units
-    // number_of_packets := rtp->rtp_ap.nal_unit_payloads.size()
-    // packet_i := rtp->rtp_ap.nal_unit_payloads[i]
-    }
-  case FU:
-    {
-    // an FU (Fragmentation Units) packet contains a piece of a NAL unit
-    // has_start_of_packet := rtp->rtp_fu.s_bit
-    // internal_type := rtp->rtp_fu.fu_type
-    // packet := rtp->rtp_fu.nal_unit_payload
-    }
-  default:
-    {
-    // a packet containing a single NAL Unit
-    // header := rtp->rtp_single.nal_unit_header
-    // payload := rtp->rtp_single.nal_unit_payload
-    }
+- Annex B utilities (`count_nalus_annexb`, `dump_annexb_to_stdout`)
+- NAL helpers and parse entry points (`nal_unit_parse`, header helpers)
+- parser state lifecycle (`BitstreamParserState`)
+- selected parser surfaces (`pps_parse`, `sps_parse`, `vps_parse`, `vui_parameters_parse`, `sei_parse`, `slice_segment_layer_parse`)
+
+Example:
+
+```rust
+use h265nal_sys::{count_nalus_annexb, sps_parse};
+
+fn inspect(data: &[u8], sps_rbsp: &[u8]) {
+    let nalu_count = count_nalus_annexb(data).expect("annexb count failed");
+    println!("nal units: {nalu_count}");
+
+    let sps = sps_parse(sps_rbsp).expect("sps parse failed");
+    println!(
+        "{}x{}",
+        sps.pic_width_in_luma_samples,
+        sps.pic_height_in_luma_samples
+    );
 }
-
-// access to the VPS/SPS/PPS map
-// e.g. bitstream_parser_state.sps[sps_id].pic_width_in_luma_samples
 ```
 
+## Parity Checks
 
-# 5. Requirements
-Requires gtest-devel, gmock-devel
-Requires llvm-tooset (or llvm-toolset-compiler-rt) for libfuzzer support
+Run parity matrix against Dockerized baseline/local tools:
 
-
-# 6. Other
-
-The `rtc_common.h|cc` code contains an RBSP parser copied from an old
-version of webrtc.
-
-The [fuzz](fuzz/README.md) directory contains information on fuzzing the
-parser.
-
-
-# 7. TODO
-
-List of tasks:
-* add lacking parsers (e.g. SEI)
-* remove TODO entries from the code
-* move headers to separate `include/` file to allow easier programmatic
-  integration
-* add a set of Annex B files for testing
-
-
-# 8. Limitations
-
-* no support for PACI (rfc7798 Section 4.4.4)
-
-
-# 9. License
-
-h265nal is BSD licensed, as found in the [LICENSE](LICENSE) file.
-
-
-# Appendix 1: cmake Preparation Notes
-
-If you want to build with clang, then you need to specify the c/cpp compilers:
-```
-$ CC=clang CXX=clang++ cmake ..
+```bash
+H265NAL_PARITY_RUN_DOCKER_TESTS=1 cargo nextest run -p h265nal-parity
 ```
 
-If you want to build with gcc, then you need to specify the c/cpp compilers and disable
-clang's fuzzer sanitizer:
-```
-$ CC=gcc CXX=g++ cmake -DBUILD_CLANG_FUZZER=OFF ..
+Generate a markdown parity report:
+
+```bash
+cargo run -p h265nal-parity -- report --output parity-report.md
 ```
 
-If you want to build in debug mode, you need to add some variables:
-```
-$ cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_FLAGS_DEBUG="-g -O0" -DCMAKE_CXX_FLAGS_DEBUG="-g -O0" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
-```
+## Formatting and Linting
 
-
-# Appendix 2: MacOS Preparation Notes
-
-1. install gtests (see [here](https://stackoverflow.com/questions/15852631/how-to-install-gtest-on-mac-os-x-with-homebrew))
-
-```
-$ brew install googletest
+```bash
+cargo fmt --all
+cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-2. install llvm (see [here](https://stackoverflow.com/questions/53111082/how-to-install-clang-tidy-on-macos))
+## License
 
-```
-$ brew install llvm
-$ brew install clang-format
-$ ln -s "$(brew --prefix llvm)/bin/clang-format" "/usr/local/bin/clang-format"
-$ ln -s "$(brew --prefix llvm)/bin/clang-tidy" "/usr/local/bin/clang-tidy"
-$ ln -s "$(brew --prefix llvm)/bin/clang-apply-replacements" "/usr/local/bin/clang-apply-replacements"
-```
+BSD-3-Clause. See `LICENSE`.

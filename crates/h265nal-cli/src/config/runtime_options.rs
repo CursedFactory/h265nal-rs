@@ -20,7 +20,7 @@ pub struct RuntimeOptions {
     pub debug: bool,
     pub quiet: bool,
     pub output_format: OutputFormat,
-    pub input_path: PathBuf,
+    pub input_path: Option<PathBuf>,
     pub hvcc_file: Option<PathBuf>,
     pub outfile: Option<PathBuf>,
 }

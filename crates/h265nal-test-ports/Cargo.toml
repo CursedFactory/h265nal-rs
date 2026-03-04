@@ -4,4 +4,4 @@ version.workspace = true
 edition = "2021"
 
 [dependencies]
-h265nal-sys = { version = "0.1.1", path = "../h265nal-sys" }
+h265nal-sys = { version = "0.1.2", path = "../h265nal-sys" }

@@ -24,7 +24,11 @@ pub struct JsonOptions {
 
 pub fn render_count(options: &RuntimeOptions, count: usize) -> Result<String, String> {
     let payload = JsonOutput {
-        source: options.input_path.display().to_string(),
+        source: options
+            .input_path
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .unwrap_or_else(|| "(none)".to_string()),
         nal_units: count,
         options: JsonOptions {
             dump_all: options.dump_all,

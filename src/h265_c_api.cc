@@ -205,6 +205,72 @@ int h265nal_utils_get_slice_qp_y(const uint8_t* data,
   return H265NAL_STATUS_OK;
 }
 
+namespace {
+
+int FillBitstreamNals(
+    const std::unique_ptr<h265nal::H265BitstreamParser::BitstreamState>& bitstream,
+    h265nal_bitstream_nal_fields* out_nals,
+    size_t out_capacity,
+    size_t* out_count) {
+  *out_count = bitstream->nal_units.size();
+  if (out_nals == nullptr && out_capacity == 0) {
+    return H265NAL_STATUS_OK;
+  }
+  if (out_capacity < bitstream->nal_units.size()) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  for (size_t i = 0; i < bitstream->nal_units.size(); ++i) {
+    const auto& nal_unit = bitstream->nal_units[i];
+    if (nal_unit == nullptr || nal_unit->nal_unit_header == nullptr) {
+      return H265NAL_STATUS_PARSE_FAILURE;
+    }
+
+    out_nals[i].offset = nal_unit->offset;
+    out_nals[i].length = nal_unit->length;
+    out_nals[i].parsed_length = nal_unit->parsed_length;
+    out_nals[i].checksum_size = 0;
+    out_nals[i].checksum[0] = 0;
+    out_nals[i].checksum[1] = 0;
+    out_nals[i].checksum[2] = 0;
+    out_nals[i].checksum[3] = 0;
+    out_nals[i].forbidden_zero_bit = nal_unit->nal_unit_header->forbidden_zero_bit;
+    out_nals[i].nal_unit_type = nal_unit->nal_unit_header->nal_unit_type;
+    out_nals[i].nuh_layer_id = nal_unit->nal_unit_header->nuh_layer_id;
+    out_nals[i].nuh_temporal_id_plus1 =
+        nal_unit->nal_unit_header->nuh_temporal_id_plus1;
+    out_nals[i].has_slice_segment_header = 0;
+    out_nals[i].first_slice_segment_in_pic_flag = 0;
+    out_nals[i].slice_segment_address = 0;
+    out_nals[i].slice_pic_order_cnt_lsb = 0;
+
+    if (nal_unit->nal_unit_payload != nullptr &&
+        nal_unit->nal_unit_payload->slice_segment_layer != nullptr &&
+        nal_unit->nal_unit_payload->slice_segment_layer->slice_segment_header != nullptr) {
+      const auto& slice_header =
+          nal_unit->nal_unit_payload->slice_segment_layer->slice_segment_header;
+      out_nals[i].has_slice_segment_header = 1;
+      out_nals[i].first_slice_segment_in_pic_flag =
+          slice_header->first_slice_segment_in_pic_flag;
+      out_nals[i].slice_segment_address = slice_header->slice_segment_address;
+      out_nals[i].slice_pic_order_cnt_lsb = slice_header->slice_pic_order_cnt_lsb;
+    }
+
+    if (nal_unit->checksum != nullptr) {
+      const size_t checksum_size = nal_unit->checksum->GetLength();
+      out_nals[i].checksum_size = checksum_size;
+      const char* checksum = nal_unit->checksum->GetChecksum();
+      for (size_t j = 0; j < checksum_size && j < 4; ++j) {
+        out_nals[i].checksum[j] = static_cast<uint8_t>(checksum[j]);
+      }
+    }
+  }
+
+  return H265NAL_STATUS_OK;
+}
+
+}  // namespace
+
 // DIVERGENCE: expose `H265BitstreamParser::ParseBitstream` metadata/checksum.
 int h265nal_bitstream_parse(const uint8_t* data,
                             size_t len,
@@ -233,45 +299,39 @@ int h265nal_bitstream_parse(const uint8_t* data,
     return H265NAL_STATUS_PARSE_FAILURE;
   }
 
-  *out_count = bitstream->nal_units.size();
-  if (out_nals == nullptr && out_capacity == 0) {
-    return H265NAL_STATUS_OK;
-  }
-  if (out_capacity < bitstream->nal_units.size()) {
+  return FillBitstreamNals(bitstream, out_nals, out_capacity, out_count);
+}
+
+// DIVERGENCE: expose `H265BitstreamParser::ParseBitstreamNALULength` metadata/checksum.
+int h265nal_bitstream_parse_nalu_length(const uint8_t* data,
+                                        size_t len,
+                                        size_t nalu_length_bytes,
+                                        h265nal_bitstream_parser_state* state,
+                                        uint32_t add_checksum,
+                                        h265nal_bitstream_nal_fields* out_nals,
+                                        size_t out_capacity,
+                                        size_t* out_count) {
+  if (out_count == nullptr || (data == nullptr && len > 0) ||
+      (out_nals == nullptr && out_capacity > 0)) {
     return H265NAL_STATUS_INVALID_ARGUMENT;
   }
 
-  for (size_t i = 0; i < bitstream->nal_units.size(); ++i) {
-    const auto& nal_unit = bitstream->nal_units[i];
-    if (nal_unit == nullptr || nal_unit->nal_unit_header == nullptr) {
-      return H265NAL_STATUS_PARSE_FAILURE;
-    }
+  h265nal::ParsingOptions parsing_options;
+  parsing_options.add_checksum = add_checksum != 0;
 
-    out_nals[i].offset = nal_unit->offset;
-    out_nals[i].length = nal_unit->length;
-    out_nals[i].parsed_length = nal_unit->parsed_length;
-    out_nals[i].checksum_size = 0;
-    out_nals[i].checksum[0] = 0;
-    out_nals[i].checksum[1] = 0;
-    out_nals[i].checksum[2] = 0;
-    out_nals[i].checksum[3] = 0;
-    out_nals[i].forbidden_zero_bit = nal_unit->nal_unit_header->forbidden_zero_bit;
-    out_nals[i].nal_unit_type = nal_unit->nal_unit_header->nal_unit_type;
-    out_nals[i].nuh_layer_id = nal_unit->nal_unit_header->nuh_layer_id;
-    out_nals[i].nuh_temporal_id_plus1 =
-        nal_unit->nal_unit_header->nuh_temporal_id_plus1;
-
-    if (nal_unit->checksum != nullptr) {
-      const size_t checksum_size = nal_unit->checksum->GetLength();
-      out_nals[i].checksum_size = checksum_size;
-      const char* checksum = nal_unit->checksum->GetChecksum();
-      for (size_t j = 0; j < checksum_size && j < 4; ++j) {
-        out_nals[i].checksum[j] = static_cast<uint8_t>(checksum[j]);
-      }
-    }
+  std::unique_ptr<h265nal::H265BitstreamParser::BitstreamState> bitstream;
+  if (state == nullptr) {
+    bitstream = h265nal::H265BitstreamParser::ParseBitstreamNALULength(
+        data, len, nalu_length_bytes, parsing_options);
+  } else {
+    bitstream = h265nal::H265BitstreamParser::ParseBitstreamNALULength(
+        data, len, nalu_length_bytes, &state->state, parsing_options);
+  }
+  if (bitstream == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
   }
 
-  return H265NAL_STATUS_OK;
+  return FillBitstreamNals(bitstream, out_nals, out_capacity, out_count);
 }
 
 // DIVERGENCE: expose `H265NalUnitHeaderParser::GetNalUnitType` helper.

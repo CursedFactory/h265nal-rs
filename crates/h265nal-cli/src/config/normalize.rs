@@ -42,7 +42,7 @@ pub fn normalize(args: CliArgs) -> Result<RuntimeOptions, String> {
     })
 }
 
-fn resolve_input_path(args: &CliArgs) -> Result<std::path::PathBuf, String> {
+fn resolve_input_path(args: &CliArgs) -> Result<Option<std::path::PathBuf>, String> {
     if let (Some(infile), Some(positional)) = (&args.infile, &args.input_path) {
         if infile != positional {
             return Err(
@@ -52,18 +52,15 @@ fn resolve_input_path(args: &CliArgs) -> Result<std::path::PathBuf, String> {
     }
 
     if let Some(infile) = &args.infile {
-        return Ok(infile.clone());
+        return Ok(Some(infile.clone()));
     }
 
     if let Some(positional) = &args.input_path {
-        return Ok(positional.clone());
+        return Ok(Some(positional.clone()));
     }
 
     if args.hvcc_file.is_some() {
-        return Err(
-            "hvcc-only input is not implemented yet; also provide --infile or positional input"
-                .to_string(),
-        );
+        return Ok(None);
     }
 
     Err("missing input: provide <input.265>, --infile, or --hvcc-file".to_string())

@@ -160,6 +160,10 @@ typedef struct h265nal_bitstream_nal_fields {
   uint32_t nal_unit_type;
   uint32_t nuh_layer_id;
   uint32_t nuh_temporal_id_plus1;
+  uint32_t has_slice_segment_header;
+  uint32_t first_slice_segment_in_pic_flag;
+  uint32_t slice_segment_address;
+  uint32_t slice_pic_order_cnt_lsb;
 } h265nal_bitstream_nal_fields;
 
 // DIVERGENCE: flattened configuration-box fields for C ABI parity tests.
@@ -634,6 +638,16 @@ int h265nal_bitstream_parse(const uint8_t* data,
                             h265nal_bitstream_nal_fields* out_nals,
                             size_t out_capacity,
                             size_t* out_count);
+
+// DIVERGENCE: expose `H265BitstreamParser::ParseBitstreamNALULength` metadata/checksum.
+int h265nal_bitstream_parse_nalu_length(const uint8_t* data,
+                                        size_t len,
+                                        size_t nalu_length_bytes,
+                                        h265nal_bitstream_parser_state* state,
+                                        uint32_t add_checksum,
+                                        h265nal_bitstream_nal_fields* out_nals,
+                                        size_t out_capacity,
+                                        size_t* out_count);
 
 // DIVERGENCE: expose `H265NalUnitHeaderParser::GetNalUnitType` helper.
 int h265nal_nal_unit_header_get_nal_unit_type(const uint8_t* data,

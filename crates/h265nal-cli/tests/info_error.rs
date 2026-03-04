@@ -44,42 +44,43 @@ fn missing_input_reports_error() {
 }
 
 #[test]
-fn dump_length_reports_not_implemented_error() {
+fn dump_length_outputs_csv_header() {
     let output = Command::new(env!("CARGO_BIN_EXE_h265nal-cli"))
         .arg("--dump-length")
         .arg(fixture_path("pps_fdump_crash.202203.265"))
         .output()
         .expect("failed to run with --dump-length");
 
-    assert_eq!(output.status.code(), Some(2));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("--dump-length is not implemented yet in Rust CLI"));
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("nal_num,frame_num,nal_unit_type"));
 }
 
 #[test]
-fn nalu_length_bytes_reports_not_implemented_error() {
+fn nalu_length_bytes_minus_one_is_accepted() {
     let output = Command::new(env!("CARGO_BIN_EXE_h265nal-cli"))
         .arg("--nalu-length-bytes")
-        .arg("4")
+        .arg("-1")
         .arg(fixture_path("pps_fdump_crash.202203.265"))
         .output()
         .expect("failed to run with --nalu-length-bytes");
 
-    assert_eq!(output.status.code(), Some(2));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("--nalu-length-bytes is not implemented yet in Rust CLI"));
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("nal_units="));
 }
 
 #[test]
-fn frames_per_second_reports_not_implemented_error() {
+fn frames_per_second_is_used_with_dump_length() {
     let output = Command::new(env!("CARGO_BIN_EXE_h265nal-cli"))
+        .arg("--dump-length")
         .arg("--frames-per-second")
         .arg("30")
         .arg(fixture_path("pps_fdump_crash.202203.265"))
         .output()
         .expect("failed to run with --frames-per-second");
 
-    assert_eq!(output.status.code(), Some(2));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("--frames-per-second is not implemented yet in Rust CLI"));
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("nal_num,frame_num,nal_unit_type"));
 }

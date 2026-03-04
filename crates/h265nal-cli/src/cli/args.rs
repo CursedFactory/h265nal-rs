@@ -22,7 +22,7 @@ pub struct CliArgs {
     #[arg(long = "dump-length", action = ArgAction::SetTrue)]
     pub dump_length: bool,
 
-    #[arg(long = "nalu-length-bytes", default_value_t = -1)]
+    #[arg(long = "nalu-length-bytes", default_value_t = -1, allow_hyphen_values = true)]
     pub nalu_length_bytes: i32,
 
     #[arg(long = "frames-per-second", value_name = "fps")]

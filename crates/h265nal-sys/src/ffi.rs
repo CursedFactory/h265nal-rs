@@ -129,6 +129,10 @@ pub(crate) struct RawBitstreamNalFields {
     pub nal_unit_type: u32,
     pub nuh_layer_id: u32,
     pub nuh_temporal_id_plus1: u32,
+    pub has_slice_segment_header: u32,
+    pub first_slice_segment_in_pic_flag: u32,
+    pub slice_segment_address: u32,
+    pub slice_pic_order_cnt_lsb: u32,
 }
 
 #[repr(C)]
@@ -598,6 +602,17 @@ unsafe extern "C" {
     pub(crate) fn h265nal_bitstream_parse(
         data: *const u8,
         len: usize,
+        state: *mut RawBitstreamParserState,
+        add_checksum: u32,
+        out_nals: *mut RawBitstreamNalFields,
+        out_capacity: usize,
+        out_count: *mut usize,
+    ) -> i32;
+
+    pub(crate) fn h265nal_bitstream_parse_nalu_length(
+        data: *const u8,
+        len: usize,
+        nalu_length_bytes: usize,
         state: *mut RawBitstreamParserState,
         add_checksum: u32,
         out_nals: *mut RawBitstreamNalFields,

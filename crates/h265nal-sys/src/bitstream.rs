@@ -13,6 +13,10 @@ pub struct BitstreamNalFields {
     pub nal_unit_type: u32,
     pub nuh_layer_id: u32,
     pub nuh_temporal_id_plus1: u32,
+    pub has_slice_segment_header: bool,
+    pub first_slice_segment_in_pic_flag: u32,
+    pub slice_segment_address: u32,
+    pub slice_pic_order_cnt_lsb: u32,
 }
 
 /// Parses an Annex-B bitstream and returns flattened per-NAL fields.
@@ -27,21 +31,57 @@ pub fn bitstream_parse(
     state: Option<&mut BitstreamParserState>,
     add_checksum: bool,
 ) -> Result<Vec<BitstreamNalFields>, Error> {
+    parse_impl(data, None, state, add_checksum)
+}
+
+/// Parses a bitstream encoded as `nalu_length_bytes`-framed units.
+///
+/// Native references:
+/// - Declaration: `include/h265_bitstream_parser.h:48` (`ParseBitstreamNALULength`)
+pub fn bitstream_parse_nalu_length(
+    data: &[u8],
+    nalu_length_bytes: usize,
+    state: Option<&mut BitstreamParserState>,
+    add_checksum: bool,
+) -> Result<Vec<BitstreamNalFields>, Error> {
+    parse_impl(data, Some(nalu_length_bytes), state, add_checksum)
+}
+
+fn parse_impl(
+    data: &[u8],
+    nalu_length_bytes: Option<usize>,
+    state: Option<&mut BitstreamParserState>,
+    add_checksum: bool,
+) -> Result<Vec<BitstreamNalFields>, Error> {
     let mut out_count = 0usize;
     let state_ptr = match state {
         Some(state) => state.as_mut_ptr(),
         None => std::ptr::null_mut(),
     };
-    let status = unsafe {
-        ffi::h265nal_bitstream_parse(
-            data.as_ptr(),
-            data.len(),
-            state_ptr,
-            u32::from(add_checksum),
-            std::ptr::null_mut(),
-            0,
-            &mut out_count,
-        )
+    let status = match nalu_length_bytes {
+        Some(length_bytes) => unsafe {
+            ffi::h265nal_bitstream_parse_nalu_length(
+                data.as_ptr(),
+                data.len(),
+                length_bytes,
+                state_ptr,
+                u32::from(add_checksum),
+                std::ptr::null_mut(),
+                0,
+                &mut out_count,
+            )
+        },
+        None => unsafe {
+            ffi::h265nal_bitstream_parse(
+                data.as_ptr(),
+                data.len(),
+                state_ptr,
+                u32::from(add_checksum),
+                std::ptr::null_mut(),
+                0,
+                &mut out_count,
+            )
+        },
     };
     status_to_result(status)?;
 
@@ -56,18 +96,36 @@ pub fn bitstream_parse(
         nal_unit_type: 0,
         nuh_layer_id: 0,
         nuh_temporal_id_plus1: 0,
+        has_slice_segment_header: 0,
+        first_slice_segment_in_pic_flag: 0,
+        slice_segment_address: 0,
+        slice_pic_order_cnt_lsb: 0,
     });
 
-    let status = unsafe {
-        ffi::h265nal_bitstream_parse(
-            data.as_ptr(),
-            data.len(),
-            state_ptr,
-            u32::from(add_checksum),
-            raw_nals.as_mut_ptr(),
-            raw_nals.len(),
-            &mut out_count,
-        )
+    let status = match nalu_length_bytes {
+        Some(length_bytes) => unsafe {
+            ffi::h265nal_bitstream_parse_nalu_length(
+                data.as_ptr(),
+                data.len(),
+                length_bytes,
+                state_ptr,
+                u32::from(add_checksum),
+                raw_nals.as_mut_ptr(),
+                raw_nals.len(),
+                &mut out_count,
+            )
+        },
+        None => unsafe {
+            ffi::h265nal_bitstream_parse(
+                data.as_ptr(),
+                data.len(),
+                state_ptr,
+                u32::from(add_checksum),
+                raw_nals.as_mut_ptr(),
+                raw_nals.len(),
+                &mut out_count,
+            )
+        },
     };
     status_to_result(status)?;
 
@@ -83,6 +141,10 @@ pub fn bitstream_parse(
             nal_unit_type: raw.nal_unit_type,
             nuh_layer_id: raw.nuh_layer_id,
             nuh_temporal_id_plus1: raw.nuh_temporal_id_plus1,
+            has_slice_segment_header: raw.has_slice_segment_header != 0,
+            first_slice_segment_in_pic_flag: raw.first_slice_segment_in_pic_flag,
+            slice_segment_address: raw.slice_segment_address,
+            slice_pic_order_cnt_lsb: raw.slice_pic_order_cnt_lsb,
         })
         .collect())
 }

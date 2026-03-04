@@ -33,7 +33,7 @@ mod vui_parameters;
 
 pub use annexb::{abi_version, count_nalus_annexb, dump_annexb_to_stdout};
 pub use aud::aud_parse_pic_type;
-pub use bitstream::{bitstream_parse, BitstreamNalFields};
+pub use bitstream::{bitstream_parse, bitstream_parse_nalu_length, BitstreamNalFields};
 pub use common::{
     common_is_nal_unit_type_non_vcl, common_is_nal_unit_type_unspecified,
     common_is_nal_unit_type_vcl, common_is_slice_segment, common_more_rbsp_data,

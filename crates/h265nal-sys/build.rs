@@ -1,7 +1,10 @@
 use std::env;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main() {
+    configure_cmake_binary();
+
     let manifest_dir = PathBuf::from(
         env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set by Cargo"),
     );
@@ -46,6 +49,23 @@ fn main() {
     println!("cargo:rustc-link-lib=static=h265nal");
 
     emit_cpp_runtime_link();
+}
+
+fn configure_cmake_binary() {
+    if env::var_os("CMAKE").is_some() {
+        return;
+    }
+
+    if Command::new("cmake").arg("--version").output().is_ok() {
+        // Prefer cmake discovered on PATH, which works with proto/prototools and CI.
+        println!("cargo:warning=using cmake from PATH");
+        return;
+    }
+
+    panic!(
+        "cmake was not found. Install it via your toolchain manager (see .prototools) \
+         or set CMAKE=/path/to/cmake"
+    );
 }
 
 fn resolve_library_directory(dst: &Path) -> Option<PathBuf> {

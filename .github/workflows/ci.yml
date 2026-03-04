@@ -40,19 +40,17 @@ jobs:
       run: |
         if [ ! -f crates/h265nal-test-ports/Cargo.toml ]; then
           mkdir -p crates/h265nal-test-ports/src
-          cat > crates/h265nal-test-ports/Cargo.toml <<'EOF'
-          [package]
-          name = "h265nal-test-ports"
-          version = "0.0.0"
-          edition = "2021"
-          publish = false
-
-          [lib]
-          path = "src/lib.rs"
-          EOF
-          cat > crates/h265nal-test-ports/src/lib.rs <<'EOF'
-          pub fn workspace_placeholder() {}
-          EOF
+          {
+            printf '%s\n' '[package]'
+            printf '%s\n' 'name = "h265nal-test-ports"'
+            printf '%s\n' 'version = "0.0.0"'
+            printf '%s\n' 'edition = "2021"'
+            printf '%s\n' 'publish = false'
+            printf '%s\n' ''
+            printf '%s\n' '[lib]'
+            printf '%s\n' 'path = "src/lib.rs"'
+          } > crates/h265nal-test-ports/Cargo.toml
+          printf '%s\n' 'pub fn workspace_placeholder() {}' > crates/h265nal-test-ports/src/lib.rs
         fi
 
     - name: Check Rust formatting

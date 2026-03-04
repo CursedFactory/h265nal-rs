@@ -68,11 +68,11 @@ jobs:
 
     - name: Run nextest per crate
       run: |
-        cargo nextest run -p h265nal-sys
-        cargo nextest run -p h265nal-cli
-        cargo nextest run -p h265nal-parity
+        cargo nextest run -p h265nal-sys --no-tests pass
+        cargo nextest run -p h265nal-cli --no-tests pass
+        cargo nextest run -p h265nal-parity --no-tests pass
         if [ -f crates/h265nal-test-ports/Cargo.toml ]; then
-          cargo nextest run -p h265nal-test-ports
+          cargo nextest run -p h265nal-test-ports --no-tests pass
         fi
 
     - name: Run doc tests

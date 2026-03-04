@@ -68,7 +68,37 @@ jobs:
       shell: bash
       run: |
         set -o pipefail
+        if [[ "${{ matrix.crate }}" == "h265nal-parity" ]]; then
+          export H265NAL_PARITY_RUN_DOCKER_TESTS=1
+        fi
         cargo nextest run -p ${{ matrix.crate }} --no-tests pass 2>&1 | tee nextest-${{ matrix.crate }}.log
+
+    - name: Generate parity matrix report
+      if: matrix.crate == 'h265nal-parity'
+      id: parity_report
+      shell: bash
+      run: |
+        set -o pipefail
+        cargo run -p h265nal-parity -- report --output parity-report.md 2>&1 | tee parity-report.log
+
+    - name: Add parity report to summary
+      if: always() && matrix.crate == 'h265nal-parity'
+      shell: bash
+      run: |
+        {
+          echo "### Parity Matrix Report"
+          if [[ -f parity-report.md ]]; then
+            echo
+            echo "<details><summary>Full markdown report</summary>"
+            echo
+            cat parity-report.md
+            echo
+            echo "</details>"
+          else
+            echo
+            echo "Parity report was not generated."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Add nextest stdout summary
       if: always()

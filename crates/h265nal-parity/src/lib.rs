@@ -1,5 +1,6 @@
 pub mod diff;
 pub mod normalize;
+pub mod report;
 pub mod runner;
 pub mod scenario;
 
@@ -14,26 +15,64 @@ pub fn run_compare(scenario_name: &str, fixture_override: Option<&str>) -> Resul
     run_compare_scenario(scenario, fixture_override)
 }
 
+#[derive(Clone, Debug)]
+pub struct Comparison {
+    pub scenario: Scenario,
+    pub fixture: Option<String>,
+    pub baseline_output: RunOutput,
+    pub local_output: RunOutput,
+    pub diagnostic: Option<String>,
+}
+
+impl Comparison {
+    pub fn is_match(&self) -> bool {
+        self.diagnostic.is_none()
+    }
+}
+
+pub fn compare_scenario(
+    scenario: Scenario,
+    fixture_override: Option<&str>,
+) -> Result<Comparison, String> {
+    let fixture = scenario.resolved_fixture(fixture_override)?;
+    let baseline_args = scenario.baseline_args(fixture_override)?;
+    let local_args = scenario.local_args(fixture_override)?;
+
+    let baseline_output = run_baseline(&baseline_args)?;
+    let local_output = run_local(&local_args)?;
+    let diagnostic = parity_diagnostic(
+        scenario.name,
+        fixture.as_deref(),
+        &baseline_output,
+        &local_output,
+    );
+
+    Ok(Comparison {
+        scenario,
+        fixture,
+        baseline_output,
+        local_output,
+        diagnostic,
+    })
+}
+
 pub fn run_compare_scenario(
     scenario: Scenario,
     fixture_override: Option<&str>,
 ) -> Result<(), String> {
-    let fixture = fixture_override.unwrap_or(scenario.default_fixture);
-    let baseline_args = scenario.baseline_args(fixture);
-    let local_args = scenario.local_args(fixture);
-
-    let baseline_output = run_baseline(&baseline_args)?;
-    let local_output = run_local(&local_args)?;
-
-    assert_parity(scenario.name(), fixture, &baseline_output, &local_output)
+    let comparison = compare_scenario(scenario, fixture_override)?;
+    match comparison.diagnostic {
+        None => Ok(()),
+        Some(diagnostic) => Err(diagnostic),
+    }
 }
 
-fn assert_parity(
+fn parity_diagnostic(
     scenario_name: &str,
-    fixture: &str,
+    fixture: Option<&str>,
     baseline_output: &RunOutput,
     local_output: &RunOutput,
-) -> Result<(), String> {
+) -> Option<String> {
     let baseline_stdout = normalize_for_compare(&baseline_output.stdout);
     let local_stdout = normalize_for_compare(&local_output.stdout);
     let baseline_stderr = normalize_for_compare(&baseline_output.stderr);
@@ -44,13 +83,14 @@ fn assert_parity(
     let stderr_mismatch = compare_bytes("stderr", baseline_stderr.as_ref(), local_stderr.as_ref());
 
     if status_match && stdout_mismatch.is_none() && stderr_mismatch.is_none() {
-        return Ok(());
+        return None;
     }
 
     let mut diagnostic = String::new();
-    diagnostic.push_str(&format!(
-        "parity mismatch for scenario `{scenario_name}` (fixture `{fixture}`)"
-    ));
+    diagnostic.push_str(&format!("parity mismatch for scenario `{scenario_name}`"));
+    if let Some(path) = fixture {
+        diagnostic.push_str(&format!(" (fixture `{path}`)"));
+    }
     diagnostic.push_str(&format!("\nbaseline command: {}", baseline_output.command));
     diagnostic.push_str(&format!("\nlocal command: {}", local_output.command));
 
@@ -70,5 +110,5 @@ fn assert_parity(
         diagnostic.push_str(&mismatch.diff);
     }
 
-    Err(diagnostic)
+    Some(diagnostic)
 }

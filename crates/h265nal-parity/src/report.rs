@@ -2,6 +2,10 @@ use crate::compare_scenario;
 use crate::scenario::{all_scenarios, ScenarioExpectation, ALL_CLI_FEATURES};
 use crate::Comparison;
 
+const MAX_MISMATCH_BLOCKS: usize = 12;
+const MAX_MISMATCH_DIFF_LINES: usize = 80;
+const MAX_MISMATCH_DIFF_CHARS: usize = 8_000;
+
 #[derive(Clone, Debug)]
 pub struct MatrixReport {
     pub comparisons: Vec<Comparison>,
@@ -152,13 +156,21 @@ pub fn render_markdown_report(report: &MatrixReport) -> String {
         out.push_str(
             "Each block is truncated to keep the report readable; rerun single scenarios for full output.\n\n",
         );
-        for entry in mismatches {
+        let shown = mismatches.len().min(MAX_MISMATCH_BLOCKS);
+        for entry in mismatches.iter().take(MAX_MISMATCH_BLOCKS) {
             out.push_str(&format!("### `{}`\n\n", entry.scenario.name));
             out.push_str("```text\n");
             if let Some(diagnostic) = &entry.diagnostic {
-                out.push_str(&truncate_lines(diagnostic, 120));
+                let lines = truncate_lines(diagnostic, MAX_MISMATCH_DIFF_LINES);
+                out.push_str(&truncate_chars(&lines, MAX_MISMATCH_DIFF_CHARS));
             }
             out.push_str("\n```\n\n");
+        }
+        if mismatches.len() > shown {
+            out.push_str(&format!(
+                "... {} additional mismatch diagnostics omitted from markdown output.\n",
+                mismatches.len() - shown
+            ));
         }
     }
 
@@ -224,15 +236,39 @@ fn truncate_lines(input: &str, max_lines: usize) -> String {
     out
 }
 
+fn truncate_chars(input: &str, max_chars: usize) -> String {
+    let total_chars = input.chars().count();
+    if total_chars <= max_chars {
+        return input.to_string();
+    }
+
+    let mut out = String::new();
+    for (index, ch) in input.chars().enumerate() {
+        if index >= max_chars {
+            break;
+        }
+        out.push(ch);
+    }
+    out.push_str("\n... (truncated)");
+    out
+}
+
 #[cfg(test)]
 mod tests {
-    use super::truncate_lines;
+    use super::{truncate_chars, truncate_lines};
 
     #[test]
     fn truncate_lines_adds_marker_when_cut() {
         let input = "a\nb\nc\nd\n";
         let out = truncate_lines(input, 2);
         assert!(out.contains("a\nb"));
+        assert!(out.contains("(truncated)"));
+    }
+
+    #[test]
+    fn truncate_chars_adds_marker_when_cut() {
+        let out = truncate_chars("abcdef", 3);
+        assert!(out.starts_with("abc"));
         assert!(out.contains("(truncated)"));
     }
 }

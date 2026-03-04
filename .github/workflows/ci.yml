@@ -63,6 +63,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake clang
 
+    - name: Pre-build parity docker images
+      if: matrix.crate == 'h265nal-parity'
+      run: docker compose -f docker/compose.yml build --quiet
+
     - name: Run nextest for crate
       id: nextest
       shell: bash
@@ -79,26 +83,39 @@ jobs:
       shell: bash
       run: |
         set -o pipefail
-        cargo run -p h265nal-parity -- report --output parity-report.md 2>&1 | tee parity-report.log
+        cargo run -q -p h265nal-parity -- report --output parity-report.md 2>&1 | tee parity-report.log
 
     - name: Add parity report to summary
       if: always() && matrix.crate == 'h265nal-parity'
       shell: bash
       run: |
-        {
-          echo "### Parity Matrix Report"
-          if [[ -f parity-report.md ]]; then
-            echo
-            echo "<details><summary>Full markdown report</summary>"
-            echo
-            cat parity-report.md
-            echo
-            echo "</details>"
-          else
-            echo
-            echo "Parity report was not generated."
-          fi
-        } >> "$GITHUB_STEP_SUMMARY"
+        python - <<'PY'
+        import os
+
+        summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+        report_path = "parity-report.md"
+        max_chars = 180_000
+
+        with open(summary_path, "a", encoding="utf-8") as out:
+            out.write("### Parity Matrix Report\n\n")
+            if not os.path.exists(report_path):
+                out.write("Parity report was not generated.\n")
+                raise SystemExit(0)
+
+            with open(report_path, "r", encoding="utf-8", errors="replace") as report:
+                content = report.read()
+
+            out.write("<details><summary>Report excerpt</summary>\n\n")
+            if len(content) > max_chars:
+                out.write(
+                    f"_Report truncated for GitHub summary size safety ({len(content)} chars total)._")
+                out.write("\n\n")
+                content = content[:max_chars] + "\n\n... (truncated)\n"
+            out.write(content)
+            if not content.endswith("\n"):
+                out.write("\n")
+            out.write("\n</details>\n")
+        PY
 
     - name: Add nextest stdout summary
       if: always()
@@ -115,6 +132,8 @@ jobs:
         outcome = os.environ["NEXTEST_OUTCOME"]
         summary_path = os.environ["GITHUB_STEP_SUMMARY"]
         log_path = f"nextest-{crate}.log"
+        max_rows = 300
+        max_raw_chars = 60_000
 
         with open(log_path, "r", encoding="utf-8", errors="replace") as f:
             raw = f.read()
@@ -147,19 +166,30 @@ jobs:
             out.write("| Status | Time | Test |\n")
             out.write("|---|---|---|\n")
             if result_rows:
-                for status, elapsed, test_name in result_rows:
+                displayed_rows = result_rows[:max_rows]
+                for status, elapsed, test_name in displayed_rows:
                     out.write(f"| {status} | {elapsed} | `{test_name}` |\n")
+                if len(result_rows) > len(displayed_rows):
+                    out.write(
+                        f"| n/a | n/a | `(omitted {len(result_rows) - len(displayed_rows)} additional test rows)` |\n"
+                    )
             else:
                 out.write("| n/a | n/a | `(no PASS/FAIL lines emitted)` |\n")
             out.write("\n")
 
-            out.write("<details><summary>Raw nextest stdout (ANSI preserved)</summary>\n\n")
-            out.write("```text\n")
-            out.write(raw)
-            if not raw.endswith("\n"):
-                out.write("\n")
-            out.write("```\n")
-            out.write("</details>\n")
+            include_raw = outcome != "success"
+            if include_raw:
+                out.write("<details><summary>Raw nextest stdout (truncated)</summary>\n\n")
+                out.write("```text\n")
+                raw_snippet = raw
+                if len(raw_snippet) > max_raw_chars:
+                    raw_snippet = raw_snippet[:max_raw_chars]
+                    raw_snippet += "\n... (truncated)\n"
+                out.write(raw_snippet)
+                if not raw_snippet.endswith("\n"):
+                    out.write("\n")
+                out.write("```\n")
+                out.write("</details>\n")
         PY
 
   build_cli_artifacts:

@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 
 #[derive(Clone, Debug)]
 pub struct RunOutput {
@@ -31,6 +32,8 @@ pub fn compose_file() -> PathBuf {
 
 fn run_service(service: &str, args: &[String]) -> Result<RunOutput, String> {
     let compose_path = compose_file();
+    ensure_compose_images_built(&compose_path)?;
+
     let mut command = Command::new("docker");
     command.arg("compose");
     command.arg("-f");
@@ -38,6 +41,8 @@ fn run_service(service: &str, args: &[String]) -> Result<RunOutput, String> {
     command.arg("run");
     command.arg("--rm");
     command.arg("-T");
+    command.arg("--no-build");
+    command.arg("--quiet-build");
     command.arg(service);
     command.arg("--");
     command.args(args);
@@ -64,9 +69,47 @@ fn render_command(compose_path: &Path, service: &str, args: &[String]) -> String
         "run".to_string(),
         "--rm".to_string(),
         "-T".to_string(),
+        "--no-build".to_string(),
+        "--quiet-build".to_string(),
         service.to_string(),
         "--".to_string(),
     ];
     parts.extend(args.iter().cloned());
     parts.join(" ")
+}
+
+fn ensure_compose_images_built(compose_path: &Path) -> Result<(), String> {
+    static BUILD_RESULT: OnceLock<Result<(), String>> = OnceLock::new();
+    BUILD_RESULT
+        .get_or_init(|| build_compose_images(compose_path))
+        .clone()
+}
+
+fn build_compose_images(compose_path: &Path) -> Result<(), String> {
+    let output = Command::new("docker")
+        .arg("compose")
+        .arg("-f")
+        .arg(compose_path)
+        .arg("build")
+        .arg("--quiet")
+        .output()
+        .map_err(|error| {
+            format!(
+                "failed to pre-build docker compose services for {}: {error}",
+                compose_path.display()
+            )
+        })?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Err(format!(
+        "docker compose build failed (exit={}):\nstdout:\n{}\nstderr:\n{}",
+        output.status.code().unwrap_or(-1),
+        stdout,
+        stderr
+    ))
 }

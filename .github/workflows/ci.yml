@@ -73,28 +73,64 @@ jobs:
     - name: Add nextest stdout summary
       if: always()
       shell: bash
+      env:
+        CRATE_NAME: ${{ matrix.crate }}
+        NEXTEST_OUTCOME: ${{ steps.nextest.outcome }}
       run: |
-        LOG_FILE="nextest-${{ matrix.crate }}.log"
-        SUMMARY_LINE=$(grep -E "Summary \[" "$LOG_FILE" | tail -n 1 || true)
-        if [ -z "$SUMMARY_LINE" ]; then
-          SUMMARY_LINE="(no summary line emitted)"
-        fi
-        SUMMARY_LINE_ESCAPED=$(printf '%s' "$SUMMARY_LINE" | sed 's/|/\\|/g')
+        python - <<'PY'
+        import os
+        import re
 
-        {
-          echo "### Nextest Results: \`${{ matrix.crate }}\`"
-          echo ""
-          echo "| Crate | Step Result | Nextest Summary |"
-          echo "|---|---|---|"
-          echo "| \`${{ matrix.crate }}\` | ${{ steps.nextest.outcome }} | $SUMMARY_LINE_ESCAPED |"
-          echo ""
-          echo "<details><summary>Raw nextest stdout</summary>"
-          echo ""
-          echo '```text'
-          cat "$LOG_FILE"
-          echo '```'
-          echo "</details>"
-        } >> "$GITHUB_STEP_SUMMARY"
+        crate = os.environ["CRATE_NAME"]
+        outcome = os.environ["NEXTEST_OUTCOME"]
+        summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+        log_path = f"nextest-{crate}.log"
+
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            raw = f.read()
+
+        ansi = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+        clean = ansi.sub("", raw)
+
+        summary_line = "(no summary line emitted)"
+        for line in clean.splitlines():
+            if "Summary [" in line:
+                summary_line = line.strip()
+
+        result_rows = []
+        result_re = re.compile(
+            r"^\s*(PASS|FAIL|LEAK|SKIP|SLOW|FLAKY)\s+(\[[^\]]+\])\s*(?:\([^\)]*\)\s*)?(.*)$"
+        )
+        for line in clean.splitlines():
+            m = result_re.match(line)
+            if not m:
+                continue
+            status, elapsed, test_name = m.groups()
+            result_rows.append((status, elapsed, test_name.replace("|", "\\|")))
+
+        with open(summary_path, "a", encoding="utf-8") as out:
+            out.write(f"### Nextest Results: `{crate}`\n\n")
+            out.write("| Crate | Step Result | Nextest Summary |\n")
+            out.write("|---|---|---|\n")
+            out.write(f"| `{crate}` | {outcome} | {summary_line.replace('|', '\\|')} |\n\n")
+
+            out.write("| Status | Time | Test |\n")
+            out.write("|---|---|---|\n")
+            if result_rows:
+                for status, elapsed, test_name in result_rows:
+                    out.write(f"| {status} | {elapsed} | `{test_name}` |\n")
+            else:
+                out.write("| n/a | n/a | `(no PASS/FAIL lines emitted)` |\n")
+            out.write("\n")
+
+            out.write("<details><summary>Raw nextest stdout (ANSI preserved)</summary>\n\n")
+            out.write("```text\n")
+            out.write(raw)
+            if not raw.endswith("\n"):
+                out.write("\n")
+            out.write("```\n")
+            out.write("</details>\n")
+        PY
 
   build_cli_artifacts:
     name: Build CLI artifact (${{ matrix.os }})

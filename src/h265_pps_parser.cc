@@ -303,6 +303,13 @@ std::shared_ptr<H265PpsParser::PpsState> H265PpsParser::ParsePps(
     pps->pps_multilayer_extension =
         H265PpsMultilayerExtensionParser::ParsePpsMultilayerExtension(
             bit_buffer);
+    if (pps->pps_multilayer_extension == nullptr) {
+#ifdef FPRINT_ERRORS
+      fprintf(stderr,
+              "error: cannot parse pps_multilayer_extension() in pps\n");
+#endif  // FPRINT_ERRORS
+      return nullptr;
+    }
   }
 
   if (pps->pps_3d_extension_flag) {
@@ -526,8 +533,14 @@ void H265PpsParser::PpsState::fdump(FILE* outfp, int indent_level) const {
   }
 
   if (pps_multilayer_extension_flag) {
-    fdump_indent_level(outfp, indent_level);
-    pps_multilayer_extension->fdump(outfp, indent_level);
+    if (pps_multilayer_extension) {
+      fdump_indent_level(outfp, indent_level);
+      pps_multilayer_extension->fdump(outfp, indent_level);
+    } else {
+#ifdef FPRINT_ERRORS
+      fprintf(stderr, "error: missing pps_multilayer_extension data in pps\n");
+#endif  // FPRINT_ERRORS
+    }
   }
 
   if (pps_3d_extension_flag) {

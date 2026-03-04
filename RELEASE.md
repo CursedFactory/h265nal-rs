@@ -2,6 +2,9 @@
 
 This repository is configured for `cargo-release` workspace publishing.
 
+Release workflows only publish and validate `h265nal-sys` and `h265nal-cli`.
+Parity and test-port crates are intentionally excluded from release checks.
+
 ## Requirements
 
 - Access to publish all crates in this workspace on crates.io.
@@ -39,11 +42,11 @@ After publish, users can install the CLI globally:
 The helper script runs:
 
 - `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets -- -D warnings` (non-blocking)
-- `cargo build`
-- `cargo nextest run`
-- `cargo test --doc`
-- `cargo release <version> --workspace`
+- `cargo clippy -p h265nal-sys -p h265nal-cli --all-targets -- -D warnings` (non-blocking)
+- `cargo build -p h265nal-sys -p h265nal-cli`
+- `cargo nextest run -p h265nal-sys -p h265nal-cli`
+- `cargo test --doc -p h265nal-sys -p h265nal-cli`
+- `cargo release <version> --workspace --exclude h265nal-parity --exclude h265nal-test-ports`
 
 ## GitHub Actions Workflows
 

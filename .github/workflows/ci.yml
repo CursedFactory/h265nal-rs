@@ -63,8 +63,17 @@ jobs:
     - name: Build
       run: cargo build
 
-    - name: Run nextest
-      run: cargo nextest run
+    - name: Run nextest (full workspace)
+      run: cargo nextest run --workspace
+
+    - name: Run nextest per crate
+      run: |
+        cargo nextest run -p h265nal-sys
+        cargo nextest run -p h265nal-cli
+        cargo nextest run -p h265nal-parity
+        if [ -f crates/h265nal-test-ports/Cargo.toml ]; then
+          cargo nextest run -p h265nal-test-ports
+        fi
 
     - name: Run doc tests
       run: cargo test --doc

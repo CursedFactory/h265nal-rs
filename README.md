@@ -53,6 +53,10 @@ Doc tests:
 cargo test --doc
 ```
 
+## Release
+
+Release requirements and step-by-step instructions are documented in `RELEASE.md`.
+
 ## Rust CLI (`h265nal-cli`)
 
 Run directly from source:

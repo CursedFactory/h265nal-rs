@@ -1,6 +1,6 @@
 [package]
 name = "h265nal-sys"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 links = "h265nal"
 build = "build.rs"

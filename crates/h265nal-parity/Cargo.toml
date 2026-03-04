@@ -1,6 +1,6 @@
 [package]
 name = "h265nal-parity"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 
 [dependencies]

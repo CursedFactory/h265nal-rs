@@ -5,23 +5,26 @@ fn main() {
     let manifest_dir = PathBuf::from(
         env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set by Cargo"),
     );
-    let repo_root = manifest_dir
-        .join("../..")
+    let source_root = manifest_dir
+        .join("native")
         .canonicalize()
-        .expect("failed to resolve repository root");
+        .expect("failed to resolve bundled source root");
 
     println!("cargo:rerun-if-changed=build.rs");
     println!(
         "cargo:rerun-if-changed={}",
-        repo_root.join("CMakeLists.txt").display()
+        source_root.join("CMakeLists.txt").display()
     );
-    println!("cargo:rerun-if-changed={}", repo_root.join("src").display());
     println!(
         "cargo:rerun-if-changed={}",
-        repo_root.join("include").display()
+        source_root.join("src").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        source_root.join("include").display()
     );
 
-    let mut config = cmake::Config::new(&repo_root);
+    let mut config = cmake::Config::new(&source_root);
     config
         .define("BUILD_TESTS", "OFF")
         .define("BUILD_CLANG_FUZZER", "OFF")

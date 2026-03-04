@@ -17,3 +17,6 @@ Hardening follow-up report:
 
 Docker parity foundation + MVP harness report:
 - `docs/reports/2026-03-03-docker-dual-cli-parity-phase1-mvp.report.md`
+
+Sequenced progress report (CLI + C ABI + renderers + docker parity checks):
+- `docs/reports/2026-03-03-cli-abi-progress-sequenced.report.md`

@@ -1,3 +1,6 @@
 
 # cmake stuff
 build/
+
+# cargo stuff
+target/

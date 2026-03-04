@@ -1,0 +1,3 @@
+add_executable(h265_c_api_smoke_test h265_c_api_smoke_test.c)
+add_test(h265_c_api_smoke_test h265_c_api_smoke_test)
+target_link_libraries(h265_c_api_smoke_test PUBLIC h265nal)

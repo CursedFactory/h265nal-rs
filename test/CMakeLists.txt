@@ -14,6 +14,7 @@ if(NOT GTest_FOUND)
 endif()
 
 include_directories(PUBLIC ../src)
+add_subdirectory(c_api)
 
 # MacOS requirements
 include_directories(PUBLIC /usr/local/include)

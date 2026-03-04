@@ -64,7 +64,37 @@ jobs:
         sudo apt-get install -y cmake clang
 
     - name: Run nextest for crate
-      run: cargo nextest run -p ${{ matrix.crate }} --no-tests pass
+      id: nextest
+      shell: bash
+      run: |
+        set -o pipefail
+        cargo nextest run -p ${{ matrix.crate }} --no-tests pass 2>&1 | tee nextest-${{ matrix.crate }}.log
+
+    - name: Add nextest stdout summary
+      if: always()
+      shell: bash
+      run: |
+        LOG_FILE="nextest-${{ matrix.crate }}.log"
+        SUMMARY_LINE=$(grep -E "Summary \[" "$LOG_FILE" | tail -n 1 || true)
+        if [ -z "$SUMMARY_LINE" ]; then
+          SUMMARY_LINE="(no summary line emitted)"
+        fi
+        SUMMARY_LINE_ESCAPED=$(printf '%s' "$SUMMARY_LINE" | sed 's/|/\\|/g')
+
+        {
+          echo "### Nextest Results: \`${{ matrix.crate }}\`"
+          echo ""
+          echo "| Crate | Step Result | Nextest Summary |"
+          echo "|---|---|---|"
+          echo "| \`${{ matrix.crate }}\` | ${{ steps.nextest.outcome }} | $SUMMARY_LINE_ESCAPED |"
+          echo ""
+          echo "<details><summary>Raw nextest stdout</summary>"
+          echo ""
+          echo '```text'
+          cat "$LOG_FILE"
+          echo '```'
+          echo "</details>"
+        } >> "$GITHUB_STEP_SUMMARY"
 
   build_cli_artifacts:
     name: Build CLI artifact (${{ matrix.os }})

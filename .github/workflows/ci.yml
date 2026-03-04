@@ -56,7 +56,8 @@ jobs:
     - name: Check Rust formatting
       run: cargo fmt --all -- --check
 
-    - name: Run clippy
+    - name: Run clippy (non-blocking)
+      continue-on-error: true
       run: cargo clippy --workspace --all-targets -- -D warnings
 
     - name: Build

@@ -5,6 +5,7 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -34,6 +35,25 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake clang
+
+    - name: Ensure workspace members exist
+      run: |
+        if [ ! -f crates/h265nal-test-ports/Cargo.toml ]; then
+          mkdir -p crates/h265nal-test-ports/src
+          cat > crates/h265nal-test-ports/Cargo.toml <<'EOF'
+          [package]
+          name = "h265nal-test-ports"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [lib]
+          path = "src/lib.rs"
+          EOF
+          cat > crates/h265nal-test-ports/src/lib.rs <<'EOF'
+          pub fn workspace_placeholder() {}
+          EOF
+        fi
 
     - name: Check Rust formatting
       run: cargo fmt --all -- --check

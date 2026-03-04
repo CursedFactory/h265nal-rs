@@ -59,6 +59,12 @@ Release requirements and step-by-step instructions are documented in `RELEASE.md
 
 ## Rust CLI (`h265nal-cli`)
 
+Install globally from crates.io:
+
+```bash
+cargo install h265nal-cli
+```
+
 Run directly from source:
 
 ```bash

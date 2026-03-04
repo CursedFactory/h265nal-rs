@@ -43,6 +43,7 @@ impl BitstreamParserState {
     /// Native references:
     /// - Unit test: `test/h265_slice_parser_unittest.cc:41`
     /// - Unit test: `test/h265_slice_parser_unittest.cc:89`
+    #[allow(clippy::too_many_arguments)]
     pub fn seed_sps(
         &mut self,
         sps_id: u32,

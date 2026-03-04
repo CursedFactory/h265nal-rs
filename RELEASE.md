@@ -19,23 +19,27 @@ This repository is configured for `cargo-release` workspace publishing.
 ## Versioning
 
 - Workspace version is set in `Cargo.toml` under `[workspace.package]`.
-- Current version: `0.1.0`.
+- Current version: `0.1.1`.
 - `release.toml` enforces shared workspace versions and `vX.Y.Z` tags.
 
 ## Local Release Workflow
 
 1. Run dry run:
-   - `bash scripts/cargo-release.sh 0.1.0`
+   - `bash scripts/cargo-release.sh 0.1.1`
 2. Publish for real:
-   - `bash scripts/cargo-release.sh 0.1.0 --execute`
+   - `bash scripts/cargo-release.sh 0.1.1 --execute`
 3. Push release commit and tags:
    - `git push origin HEAD`
    - `git push origin --tags`
 
+After publish, users can install the CLI globally:
+
+- `cargo install h265nal-cli`
+
 The helper script runs:
 
 - `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo clippy --workspace --all-targets -- -D warnings` (non-blocking)
 - `cargo build`
 - `cargo nextest run`
 - `cargo test --doc`

@@ -106,7 +106,7 @@ fn parity_diagnostic(
             "\n{} bytes mismatch: baseline={} local={}",
             mismatch.stream_name, mismatch.baseline_len, mismatch.local_len
         ));
-        diagnostic.push_str("\n");
+        diagnostic.push('\n');
         diagnostic.push_str(&mismatch.diff);
     }
 

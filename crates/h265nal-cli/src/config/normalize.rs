@@ -96,7 +96,7 @@ mod tests {
             dump_length: false,
             nalu_length_bytes: -1,
             frames_per_second: None,
-            as_one_line: false,
+            as_one_line: true,
             no_as_one_line: false,
             add_offset: false,
             no_add_offset: false,
@@ -144,6 +144,13 @@ mod tests {
         args.no_as_one_line = true;
         let options = normalize(args).expect("normalize should succeed");
         assert!(!options.as_one_line);
+    }
+
+    #[test]
+    fn as_one_line_defaults_to_true() {
+        let args = base_args();
+        let options = normalize(args).expect("normalize should succeed");
+        assert!(options.as_one_line);
     }
 
     #[test]

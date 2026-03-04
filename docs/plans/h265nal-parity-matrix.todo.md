@@ -5,6 +5,23 @@
 - [ ] Maintain one pseudo-code markdown file per native `TEST_*` case (currently 59).
 - [ ] Regenerate `docs/test-cases/` when native tests change, then re-check affected parity rows.
 
+## Group-Orchestrated Rust Test Porting (59 cases)
+- [ ] Keep group orchestration plan current: `docs/plans/h265nal-rust-test-port-groups.plan.md`.
+- [ ] Keep trigger prompts current: `docs/plans/h265nal-rust-test-port-trigger.prompt.md`.
+- [ ] Track API gaps in: `docs/plans/h265nal-rust-test-port-missing-features.md`.
+- [ ] Group 01 (cases 1-5) - in progress
+- [ ] Group 02 (cases 6-10)
+- [ ] Group 03 (cases 11-15)
+- [ ] Group 04 (cases 16-20)
+- [ ] Group 05 (cases 21-25)
+- [ ] Group 06 (cases 26-30)
+- [ ] Group 07 (cases 31-35)
+- [ ] Group 08 (cases 36-40)
+- [ ] Group 09 (cases 41-45)
+- [ ] Group 10 (cases 46-50)
+- [ ] Group 11 (cases 51-55)
+- [ ] Group 12 (cases 56-59)
+
 ## Track A: C ABI 1:1 Coverage
 
 ### Contract + Infrastructure
@@ -174,6 +191,31 @@
 ### Track B Gates
 - [x] `cargo nextest run -p h265nal-cli`
 - [x] `cargo nextest run -p h265nal-sys -p h265nal-cli`
+
+## Track C: Rust Native Suite Wrapper (Out-of-Band)
+
+### Wrapper Crate Foundation
+- [x] Add `crates/h265nal-native-suite` and workspace wiring.
+- [x] Keep `h265nal-native-suite` out of workspace `default-members`.
+- [x] Parse `docs/test-cases/README.md` index into case inventory.
+- [x] Verify native `test/*_unittest.cc` inventory aligns with case index.
+
+### Wrapper Coverage State
+- [x] Provide Rust wrapper entries for all indexed native cases.
+- [x] Track per-case wrapper status (`inventory-only` or docker-scenario proxy).
+- [ ] Expand wrappers from inventory/proxy to executable per-case parity mappings.
+
+### Staged Docker Verification
+- [x] Add stage docker checks via `crates/h265nal-parity` scenarios.
+- [x] Verify baseline/local comparisons for:
+  - `dump_one_line`
+  - `dump_multiline`
+  - `dump_crash_fixture`
+- [ ] Grow stage scenarios beyond MVP and map them to wrapper cases.
+
+### Track C Gates
+- [x] `cargo nextest run -p h265nal-native-suite`
+- [x] `H265NAL_PARITY_RUN_DOCKER_TESTS=1 cargo nextest run -p h265nal-native-suite`
 
 ## Final Integration Gate
 - [ ] `./scripts/build.sh.ts`

@@ -28,7 +28,12 @@ pub struct CliArgs {
     #[arg(long = "frames-per-second", value_name = "fps")]
     pub frames_per_second: Option<f64>,
 
-    #[arg(long = "as-one-line", visible_alias = "one-line", action = ArgAction::SetTrue)]
+    #[arg(
+        long = "as-one-line",
+        visible_alias = "one-line",
+        action = ArgAction::SetTrue,
+        default_value_t = true
+    )]
     pub as_one_line: bool,
 
     #[arg(long = "no-as-one-line", action = ArgAction::SetTrue)]

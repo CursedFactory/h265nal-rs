@@ -20,3 +20,12 @@ Docker parity foundation + MVP harness report:
 
 Sequenced progress report (CLI + C ABI + renderers + docker parity checks):
 - `docs/reports/2026-03-03-cli-abi-progress-sequenced.report.md`
+
+Native suite wrapper pass report:
+- `docs/reports/2026-03-03-native-suite-wrapper-pass1.report.md`
+
+## Reporting Standards
+- Use one report file per implementation slice and include exact validation commands.
+- Record durable decisions with `[DECISION]`, temporary shortcuts with `[HACK]`, and hard blockers with `[BLOCKER]`.
+- Include at least one baseline-vs-local docker comparison command/result whenever parity work is in scope.
+- End each report with a continuation prompt that states current context and the next ordered goals.

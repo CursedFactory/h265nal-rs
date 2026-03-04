@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 use crate::cli::output_format::OutputFormat;
@@ -7,14 +8,42 @@ use crate::ffi::parser;
 use crate::render;
 
 pub fn run(options: RuntimeOptions) -> Result<(), String> {
-    let data = fs::read(&options.input_path)
-        .map_err(|err| format!("failed to read {}: {err}", options.input_path.display()))?;
+    validate_supported_options(&options)?;
+    let data = read_input_bytes(&options.input_path)?;
 
     match options.output_format {
         OutputFormat::C => run_c_mode(&options, &data),
         OutputFormat::Json => run_json_mode(&options, &data),
         OutputFormat::Pretty => run_pretty_mode(&options, &data),
     }
+}
+
+fn validate_supported_options(options: &RuntimeOptions) -> Result<(), String> {
+    if options.dump_length {
+        return Err("--dump-length is not implemented yet in Rust CLI".to_string());
+    }
+
+    if options.nalu_length_bytes != -1 {
+        return Err("--nalu-length-bytes is not implemented yet in Rust CLI".to_string());
+    }
+
+    if options.frames_per_second.is_some() {
+        return Err("--frames-per-second is not implemented yet in Rust CLI".to_string());
+    }
+
+    Ok(())
+}
+
+fn read_input_bytes(input_path: &Path) -> Result<Vec<u8>, String> {
+    if input_path == Path::new("-") {
+        let mut data = Vec::new();
+        std::io::stdin()
+            .read_to_end(&mut data)
+            .map_err(|err| format!("failed to read stdin: {err}"))?;
+        return Ok(data);
+    }
+
+    fs::read(input_path).map_err(|err| format!("failed to read {}: {err}", input_path.display()))
 }
 
 fn run_c_mode(options: &RuntimeOptions, data: &[u8]) -> Result<(), String> {

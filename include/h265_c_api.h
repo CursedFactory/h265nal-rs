@@ -28,6 +28,15 @@ enum {
   H265NAL_RTP_PACKET_KIND_FU = 3,
 };
 
+enum {
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_FLAG = 0,
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USE_DELTA_FLAG = 1,
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S0_MINUS1 = 2,
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S0_FLAG = 3,
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S1_MINUS1 = 4,
+  H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S1_FLAG = 5,
+};
+
 typedef struct h265nal_bitstream_parser_state
     h265nal_bitstream_parser_state;
 
@@ -232,8 +241,25 @@ typedef struct h265nal_sps_fields {
   uint32_t sps_3d_extension_flag;
   uint32_t sps_scc_extension_flag;
   uint32_t sps_extension_4bits;
+  size_t st_ref_pic_set_size;
   uint32_t pic_size_in_ctbs_y;
 } h265nal_sps_fields;
+
+// DIVERGENCE: dynamic SPS st-ref-pic-set scalar/size introspection for Rust parity tests.
+typedef struct h265nal_sps_st_ref_pic_set_fields {
+  uint32_t inter_ref_pic_set_prediction_flag;
+  uint32_t delta_idx_minus1;
+  uint32_t delta_rps_sign;
+  uint32_t abs_delta_rps_minus1;
+  uint32_t num_negative_pics;
+  uint32_t num_positive_pics;
+  size_t used_by_curr_pic_flag_size;
+  size_t use_delta_flag_size;
+  size_t delta_poc_s0_minus1_size;
+  size_t used_by_curr_pic_s0_flag_size;
+  size_t delta_poc_s1_minus1_size;
+  size_t used_by_curr_pic_s1_flag_size;
+} h265nal_sps_st_ref_pic_set_fields;
 
 // DIVERGENCE: flattened slice-segment-layer header fields for Rust parity tests.
 typedef struct h265nal_slice_segment_layer_fields {
@@ -295,9 +321,11 @@ typedef struct h265nal_sei_message_fields {
   uint32_t has_user_data_registered_itu_t_t35;
   uint8_t user_data_registered_itu_t_t35_country_code;
   uint8_t user_data_registered_itu_t_t35_country_code_extension_byte;
+  uint32_t user_data_registered_itu_t_t35_payload_size;
   uint32_t has_user_data_unregistered;
   uint64_t user_data_unregistered_uuid_iso_iec_11578_1;
   uint64_t user_data_unregistered_uuid_iso_iec_11578_2;
+  uint32_t user_data_unregistered_payload_size;
   uint32_t has_alpha_channel_info;
   uint32_t alpha_channel_cancel_flag;
   uint32_t alpha_channel_use_idc;
@@ -317,6 +345,8 @@ typedef struct h265nal_sei_message_fields {
   uint32_t has_content_light_level_info;
   uint16_t content_light_level_max_content_light_level;
   uint16_t content_light_level_max_pic_average_light_level;
+  uint32_t has_unknown_payload;
+  uint32_t unknown_payload_size;
 } h265nal_sei_message_fields;
 
 // DIVERGENCE: flattened SPS multilayer extension fields for Rust parity tests.
@@ -662,6 +692,27 @@ int h265nal_sps_parse(const uint8_t* data,
                       size_t len,
                       h265nal_sps_fields* out_sps);
 
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set count for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_count(const uint8_t* data,
+                                     size_t len,
+                                     size_t* out_count);
+
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set scalar/size fields for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_get(
+    const uint8_t* data,
+    size_t len,
+    size_t st_ref_pic_set_idx,
+    h265nal_sps_st_ref_pic_set_fields* out_st_ref_pic_set);
+
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set vectors for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_vector_get(const uint8_t* data,
+                                          size_t len,
+                                          size_t st_ref_pic_set_idx,
+                                          uint32_t vector_kind,
+                                          uint32_t* out_values,
+                                          size_t out_capacity,
+                                          size_t* out_count);
+
 // DIVERGENCE: expose state seeding helpers for slice parser parity tests.
 int h265nal_bitstream_parser_state_seed_vps(h265nal_bitstream_parser_state* state,
                                             uint32_t vps_id);
@@ -698,6 +749,27 @@ int h265nal_rtp_parse(const uint8_t* data,
 int h265nal_sei_parse(const uint8_t* data,
                       size_t len,
                       h265nal_sei_message_fields* out_sei_message);
+
+// DIVERGENCE: expose dynamic SEI registered ITU-T T.35 payload bytes.
+int h265nal_sei_registered_itu_t_t35_payload_get(const uint8_t* data,
+                                                 size_t len,
+                                                 uint8_t* out_values,
+                                                 size_t out_capacity,
+                                                 size_t* out_count);
+
+// DIVERGENCE: expose dynamic SEI unregistered payload bytes.
+int h265nal_sei_unregistered_payload_get(const uint8_t* data,
+                                         size_t len,
+                                         uint8_t* out_values,
+                                         size_t out_capacity,
+                                         size_t* out_count);
+
+// DIVERGENCE: expose dynamic SEI unknown payload bytes.
+int h265nal_sei_unknown_payload_get(const uint8_t* data,
+                                    size_t len,
+                                    uint8_t* out_values,
+                                    size_t out_capacity,
+                                    size_t* out_count);
 
 // DIVERGENCE: expose `H265SpsMultilayerExtensionParser::ParseSpsMultilayerExtension`.
 int h265nal_sps_multilayer_extension_parse(

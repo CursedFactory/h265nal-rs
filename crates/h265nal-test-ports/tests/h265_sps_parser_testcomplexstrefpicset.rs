@@ -29,5 +29,26 @@ fn test_complex_st_ref_pic_set() {
     assert_eq!(sps.sps_extension_present_flag, 1);
     assert_eq!(sps.sps_multilayer_extension_flag, 1);
     assert_eq!(sps.sps_3d_extension_flag, 1);
+    assert_eq!(sps.st_ref_pic_set_size, 12);
+
+    assert_eq!(sps.st_ref_pic_set[0].num_negative_pics, 4);
+    assert_eq!(sps.st_ref_pic_set[0].num_positive_pics, 0);
+    assert_eq!(sps.st_ref_pic_set[0].delta_poc_s0_minus1, [7, 1, 1, 3]);
+    assert_eq!(sps.st_ref_pic_set[0].used_by_curr_pic_s0_flag, [1, 1, 1, 1]);
+
+    assert_eq!(sps.st_ref_pic_set[1].inter_ref_pic_set_prediction_flag, 1);
+    assert_eq!(sps.st_ref_pic_set[1].delta_rps_sign, 0);
+    assert_eq!(sps.st_ref_pic_set[1].abs_delta_rps_minus1, 3);
+    assert_eq!(sps.st_ref_pic_set[1].used_by_curr_pic_flag, [1, 1, 0, 0, 1]);
+    assert_eq!(sps.st_ref_pic_set[1].use_delta_flag, [1, 1, 0, 0, 1]);
+
+    assert_eq!(sps.st_ref_pic_set[11].inter_ref_pic_set_prediction_flag, 0);
+    assert_eq!(sps.st_ref_pic_set[11].num_negative_pics, 0);
+    assert_eq!(sps.st_ref_pic_set[11].num_positive_pics, 0);
+    assert!(sps.st_ref_pic_set[11].delta_poc_s0_minus1.is_empty());
+    assert!(sps.st_ref_pic_set[11].used_by_curr_pic_s0_flag.is_empty());
+    assert!(sps.st_ref_pic_set[11].delta_poc_s1_minus1.is_empty());
+    assert!(sps.st_ref_pic_set[11].used_by_curr_pic_s1_flag.is_empty());
+
     assert_eq!(sps.pic_size_in_ctbs_y, 510);
 }

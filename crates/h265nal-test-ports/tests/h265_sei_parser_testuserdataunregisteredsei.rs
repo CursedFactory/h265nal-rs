@@ -25,4 +25,9 @@ fn test_user_data_unregistered_sei() {
         sei.user_data_unregistered_uuid_iso_iec_11578_2,
         0xbb55a4fe7fc2fc4e
     );
+    assert_eq!(sei.user_data_unregistered_payload_size, 40);
+    assert_eq!(sei.user_data_unregistered_payload.len(), 40);
+    assert_eq!(sei.user_data_unregistered_payload[0], 0x78);
+    assert_eq!(sei.user_data_unregistered_payload[1], 0x32);
+    assert_eq!(sei.has_unknown_payload, 0);
 }

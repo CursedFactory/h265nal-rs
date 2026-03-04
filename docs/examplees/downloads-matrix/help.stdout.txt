@@ -1,0 +1,34 @@
+Rust CLI for h265nal
+
+Usage: h265nal-cli [OPTIONS] [input.265]
+
+Arguments:
+  [input.265]  
+
+Options:
+  -i, --infile <input.265>                     
+  -o, --outfile <output>                       
+      --hvcc-file <hvcc.bin>                   
+      --dump-all                               [aliases: --dump]
+      --dump-length                            
+      --nalu-length-bytes <NALU_LENGTH_BYTES>  [default: -1]
+      --frames-per-second <fps>                
+      --as-one-line                            [aliases: --one-line]
+      --no-as-one-line                         
+      --add-offset                             
+      --no-add-offset                          
+      --add-length                             
+      --no-add-length                          
+      --add-parsed-length                      
+      --no-add-parsed-length                   
+      --add-checksum                           
+      --no-add-checksum                        
+      --add-resolution                         
+      --no-add-resolution                      
+      --add-contents                           
+      --no-add-contents                        
+  -d, --debug                                  
+      --quiet                                  
+      --output-format <OUTPUT_FORMAT>          [default: c] [possible values: json, pretty, c]
+  -h, --help                                   Print help
+  -V, --version                                Print version

@@ -1,0 +1,24 @@
+[version] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --version
+[dump_length] exit=2 stdout_lines=0 stderr_lines=1
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --dump-length
+[add_offset] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-offset
+[add_length] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-length
+[add_parsed_length] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-parsed-length
+[add_checksum] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-checksum
+[add_resolution] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-resolution
+[add_contents] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --add-contents
+[quiet] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --quiet
+[debug] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --debug
+[nalu_length_bytes_4] exit=2 stdout_lines=0 stderr_lines=1
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --nalu-length-bytes 4
+[fps_30] exit=2 stdout_lines=0 stderr_lines=1
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --frames-per-second 30

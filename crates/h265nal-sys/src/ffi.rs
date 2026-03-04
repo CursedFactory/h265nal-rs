@@ -2,6 +2,13 @@ use crate::state::RawBitstreamParserState;
 
 pub(crate) type NalUnitTypePredicate = unsafe extern "C" fn(u32, *mut u32) -> i32;
 
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_FLAG: u32 = 0;
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USE_DELTA_FLAG: u32 = 1;
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S0_MINUS1: u32 = 2;
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S0_FLAG: u32 = 3;
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S1_MINUS1: u32 = 4;
+pub(crate) const H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S1_FLAG: u32 = 5;
+
 #[repr(C)]
 pub(crate) struct RawProfileInfoFields {
     pub profile_space: u32,
@@ -203,7 +210,24 @@ pub(crate) struct RawSpsFields {
     pub sps_3d_extension_flag: u32,
     pub sps_scc_extension_flag: u32,
     pub sps_extension_4bits: u32,
+    pub st_ref_pic_set_size: usize,
     pub pic_size_in_ctbs_y: u32,
+}
+
+#[repr(C)]
+pub(crate) struct RawSpsStRefPicSetFields {
+    pub inter_ref_pic_set_prediction_flag: u32,
+    pub delta_idx_minus1: u32,
+    pub delta_rps_sign: u32,
+    pub abs_delta_rps_minus1: u32,
+    pub num_negative_pics: u32,
+    pub num_positive_pics: u32,
+    pub used_by_curr_pic_flag_size: usize,
+    pub use_delta_flag_size: usize,
+    pub delta_poc_s0_minus1_size: usize,
+    pub used_by_curr_pic_s0_flag_size: usize,
+    pub delta_poc_s1_minus1_size: usize,
+    pub used_by_curr_pic_s1_flag_size: usize,
 }
 
 #[repr(C)]
@@ -260,9 +284,11 @@ pub(crate) struct RawSeiMessageFields {
     pub has_user_data_registered_itu_t_t35: u32,
     pub user_data_registered_itu_t_t35_country_code: u8,
     pub user_data_registered_itu_t_t35_country_code_extension_byte: u8,
+    pub user_data_registered_itu_t_t35_payload_size: u32,
     pub has_user_data_unregistered: u32,
     pub user_data_unregistered_uuid_iso_iec_11578_1: u64,
     pub user_data_unregistered_uuid_iso_iec_11578_2: u64,
+    pub user_data_unregistered_payload_size: u32,
     pub has_alpha_channel_info: u32,
     pub alpha_channel_cancel_flag: u32,
     pub alpha_channel_use_idc: u32,
@@ -282,6 +308,8 @@ pub(crate) struct RawSeiMessageFields {
     pub has_content_light_level_info: u32,
     pub content_light_level_max_content_light_level: u16,
     pub content_light_level_max_pic_average_light_level: u16,
+    pub has_unknown_payload: u32,
+    pub unknown_payload_size: u32,
 }
 
 #[repr(C)]
@@ -632,6 +660,29 @@ unsafe extern "C" {
     pub(crate) fn h265nal_sps_parse(data: *const u8, len: usize, out_sps: *mut RawSpsFields)
         -> i32;
 
+    pub(crate) fn h265nal_sps_st_ref_pic_set_count(
+        data: *const u8,
+        len: usize,
+        out_count: *mut usize,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sps_st_ref_pic_set_get(
+        data: *const u8,
+        len: usize,
+        st_ref_pic_set_idx: usize,
+        out_st_ref_pic_set: *mut RawSpsStRefPicSetFields,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sps_st_ref_pic_set_vector_get(
+        data: *const u8,
+        len: usize,
+        st_ref_pic_set_idx: usize,
+        vector_kind: u32,
+        out_values: *mut u32,
+        out_capacity: usize,
+        out_count: *mut usize,
+    ) -> i32;
+
     pub(crate) fn h265nal_bitstream_parser_state_seed_vps(
         state: *mut RawBitstreamParserState,
         vps_id: u32,
@@ -672,6 +723,30 @@ unsafe extern "C" {
         data: *const u8,
         len: usize,
         out_sei_message: *mut RawSeiMessageFields,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sei_registered_itu_t_t35_payload_get(
+        data: *const u8,
+        len: usize,
+        out_values: *mut u8,
+        out_capacity: usize,
+        out_count: *mut usize,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sei_unregistered_payload_get(
+        data: *const u8,
+        len: usize,
+        out_values: *mut u8,
+        out_capacity: usize,
+        out_count: *mut usize,
+    ) -> i32;
+
+    pub(crate) fn h265nal_sei_unknown_payload_get(
+        data: *const u8,
+        len: usize,
+        out_values: *mut u8,
+        out_capacity: usize,
+        out_count: *mut usize,
     ) -> i32;
 
     pub(crate) fn h265nal_sps_multilayer_extension_parse(

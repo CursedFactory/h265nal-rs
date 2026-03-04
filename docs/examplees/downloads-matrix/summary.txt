@@ -1,0 +1,18 @@
+[help] exit=0 stdout_lines=34 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --help
+[default_infile] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265
+[default_positional] exit=0 stdout_lines=1 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265
+[pretty_count] exit=0 stdout_lines=5 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --output-format pretty
+[json_count] exit=0 stdout_lines=15 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --output-format json
+[c_dump_all] exit=0 stdout_lines=2695 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --dump-all
+[c_dump_all_verbose] exit=0 stdout_lines=96620 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --dump-all --no-as-one-line --add-offset --add-length --add-parsed-length --add-checksum
+[outfile_pretty] exit=0 stdout_lines=0 stderr_lines=0
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --infile /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265 --output-format pretty --outfile /Users/alexander.carter/repos/cursed/h265nal-rs/docs/examplees/downloads-matrix/outfile_pretty.txt
+[hvcc_only_error] exit=2 stdout_lines=0 stderr_lines=1
+cmd: /Users/alexander.carter/repos/cursed/h265nal-rs/target/debug/h265nal-cli --hvcc-file /Users/alexander.carter/Downloads/20260304-012633__p2-droid-1106__droid__center.h265

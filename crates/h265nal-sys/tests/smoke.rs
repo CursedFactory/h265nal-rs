@@ -105,6 +105,37 @@ fn sei_parse_smoke() {
     let sei = h265nal_sys::sei_parse(&buffer).expect("sei parse failed");
     assert_eq!(sei.payload_type, 5);
     assert_eq!(sei.has_user_data_unregistered, 1);
+    assert_eq!(sei.user_data_unregistered_payload_size, 40);
+    assert_eq!(sei.user_data_unregistered_payload.len(), 40);
+    assert_eq!(sei.user_data_unregistered_payload[0], 0x78);
+}
+
+#[test]
+fn sei_parse_unknown_payload_smoke() {
+    let buffer = [0x93, 0x03, 0xaa, 0xbb, 0xcc];
+    let sei = h265nal_sys::sei_parse(&buffer).expect("sei parse failed");
+    assert_eq!(sei.payload_type, 147);
+    assert_eq!(sei.has_unknown_payload, 1);
+    assert_eq!(sei.unknown_payload_size, 3);
+    assert_eq!(sei.unknown_payload.len(), 3);
+    assert_eq!(sei.unknown_payload[0], 0xaa);
+    assert_eq!(sei.unknown_payload[1], 0xbb);
+    assert_eq!(sei.unknown_payload[2], 0xcc);
+}
+
+#[test]
+fn sps_st_ref_pic_set_dynamic_smoke() {
+    let buffer = [
+        0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99, 0xa0, 0x03,
+        0xc0, 0x80, 0x11, 0x07, 0xf9, 0x65, 0x26, 0x49, 0x1b, 0x61, 0xa5, 0x88, 0xaa, 0x93, 0x13,
+        0x0c, 0xbe, 0xcf, 0xaf, 0x37, 0xe5, 0x9f, 0x5e, 0x14, 0x46, 0x27, 0x2e, 0xda, 0xc0, 0xff,
+        0xff,
+    ];
+
+    let sps = h265nal_sys::sps_parse(&buffer).expect("sps parse failed");
+    assert_eq!(sps.st_ref_pic_set_size, 12);
+    assert_eq!(sps.st_ref_pic_set.len(), 12);
+    assert_eq!(sps.st_ref_pic_set[1].used_by_curr_pic_flag, [1, 1, 0, 0, 1]);
 }
 
 #[test]

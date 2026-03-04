@@ -8,9 +8,13 @@ pub struct SeiMessageFields {
     pub has_user_data_registered_itu_t_t35: u32,
     pub user_data_registered_itu_t_t35_country_code: u8,
     pub user_data_registered_itu_t_t35_country_code_extension_byte: u8,
+    pub user_data_registered_itu_t_t35_payload_size: u32,
+    pub user_data_registered_itu_t_t35_payload: Vec<u8>,
     pub has_user_data_unregistered: u32,
     pub user_data_unregistered_uuid_iso_iec_11578_1: u64,
     pub user_data_unregistered_uuid_iso_iec_11578_2: u64,
+    pub user_data_unregistered_payload_size: u32,
+    pub user_data_unregistered_payload: Vec<u8>,
     pub has_alpha_channel_info: u32,
     pub alpha_channel_cancel_flag: u32,
     pub alpha_channel_use_idc: u32,
@@ -30,6 +34,9 @@ pub struct SeiMessageFields {
     pub has_content_light_level_info: u32,
     pub content_light_level_max_content_light_level: u16,
     pub content_light_level_max_pic_average_light_level: u16,
+    pub has_unknown_payload: u32,
+    pub unknown_payload_size: u32,
+    pub unknown_payload: Vec<u8>,
 }
 
 /// Parses one SEI message and returns baseline parity fields.
@@ -44,9 +51,11 @@ pub fn sei_parse(data: &[u8]) -> Result<SeiMessageFields, Error> {
         has_user_data_registered_itu_t_t35: 0,
         user_data_registered_itu_t_t35_country_code: 0,
         user_data_registered_itu_t_t35_country_code_extension_byte: 0,
+        user_data_registered_itu_t_t35_payload_size: 0,
         has_user_data_unregistered: 0,
         user_data_unregistered_uuid_iso_iec_11578_1: 0,
         user_data_unregistered_uuid_iso_iec_11578_2: 0,
+        user_data_unregistered_payload_size: 0,
         has_alpha_channel_info: 0,
         alpha_channel_cancel_flag: 0,
         alpha_channel_use_idc: 0,
@@ -66,6 +75,8 @@ pub fn sei_parse(data: &[u8]) -> Result<SeiMessageFields, Error> {
         has_content_light_level_info: 0,
         content_light_level_max_content_light_level: 0,
         content_light_level_max_pic_average_light_level: 0,
+        has_unknown_payload: 0,
+        unknown_payload_size: 0,
     };
     let status = unsafe { ffi::h265nal_sei_parse(data.as_ptr(), data.len(), &mut raw) };
     status_to_result(status)?;
@@ -78,11 +89,22 @@ pub fn sei_parse(data: &[u8]) -> Result<SeiMessageFields, Error> {
             .user_data_registered_itu_t_t35_country_code,
         user_data_registered_itu_t_t35_country_code_extension_byte: raw
             .user_data_registered_itu_t_t35_country_code_extension_byte,
+        user_data_registered_itu_t_t35_payload_size: raw
+            .user_data_registered_itu_t_t35_payload_size,
+        user_data_registered_itu_t_t35_payload: sei_payload_bytes_get(
+            data,
+            ffi::h265nal_sei_registered_itu_t_t35_payload_get,
+        )?,
         has_user_data_unregistered: raw.has_user_data_unregistered,
         user_data_unregistered_uuid_iso_iec_11578_1: raw
             .user_data_unregistered_uuid_iso_iec_11578_1,
         user_data_unregistered_uuid_iso_iec_11578_2: raw
             .user_data_unregistered_uuid_iso_iec_11578_2,
+        user_data_unregistered_payload_size: raw.user_data_unregistered_payload_size,
+        user_data_unregistered_payload: sei_payload_bytes_get(
+            data,
+            ffi::h265nal_sei_unregistered_payload_get,
+        )?,
         has_alpha_channel_info: raw.has_alpha_channel_info,
         alpha_channel_cancel_flag: raw.alpha_channel_cancel_flag,
         alpha_channel_use_idc: raw.alpha_channel_use_idc,
@@ -106,5 +128,39 @@ pub fn sei_parse(data: &[u8]) -> Result<SeiMessageFields, Error> {
             .content_light_level_max_content_light_level,
         content_light_level_max_pic_average_light_level: raw
             .content_light_level_max_pic_average_light_level,
+        has_unknown_payload: raw.has_unknown_payload,
+        unknown_payload_size: raw.unknown_payload_size,
+        unknown_payload: sei_payload_bytes_get(data, ffi::h265nal_sei_unknown_payload_get)?,
     })
+}
+
+fn sei_payload_bytes_get(
+    data: &[u8],
+    payload_getter: unsafe extern "C" fn(*const u8, usize, *mut u8, usize, *mut usize) -> i32,
+) -> Result<Vec<u8>, Error> {
+    let mut out_count = 0usize;
+    let status = unsafe {
+        payload_getter(
+            data.as_ptr(),
+            data.len(),
+            std::ptr::null_mut(),
+            0,
+            &mut out_count,
+        )
+    };
+    status_to_result(status)?;
+
+    let mut out_values = vec![0u8; out_count];
+    let status = unsafe {
+        payload_getter(
+            data.as_ptr(),
+            data.len(),
+            out_values.as_mut_ptr(),
+            out_values.len(),
+            &mut out_count,
+        )
+    };
+    status_to_result(status)?;
+    out_values.truncate(out_count);
+    Ok(out_values)
 }

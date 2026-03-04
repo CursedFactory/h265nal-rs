@@ -23,4 +23,9 @@ fn test_user_data_registered_itu_t_t35_sei() {
         sei.user_data_registered_itu_t_t35_country_code_extension_byte,
         0
     );
+    assert_eq!(sei.user_data_registered_itu_t_t35_payload_size, 70);
+    assert_eq!(sei.user_data_registered_itu_t_t35_payload.len(), 70);
+    assert_eq!(sei.user_data_registered_itu_t_t35_payload[0], 0x00);
+    assert_eq!(sei.user_data_registered_itu_t_t35_payload[1], 0x31);
+    assert_eq!(sei.has_unknown_payload, 0);
 }

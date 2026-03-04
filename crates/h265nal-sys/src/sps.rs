@@ -1,6 +1,30 @@
 use crate::error::{status_to_result, Error};
-use crate::ffi::{self, RawProfileInfoFields, RawProfileTierLevelFields, RawSpsFields};
+use crate::ffi::{
+    self, RawProfileInfoFields, RawProfileTierLevelFields, RawSpsFields, RawSpsStRefPicSetFields,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S0_MINUS1,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S1_MINUS1,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_FLAG,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S0_FLAG,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S1_FLAG,
+    H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USE_DELTA_FLAG,
+};
 use crate::profile_tier_level::{ProfileInfoFields, ProfileTierLevelFields};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpsStRefPicSetFields {
+    pub inter_ref_pic_set_prediction_flag: u32,
+    pub delta_idx_minus1: u32,
+    pub delta_rps_sign: u32,
+    pub abs_delta_rps_minus1: u32,
+    pub num_negative_pics: u32,
+    pub num_positive_pics: u32,
+    pub used_by_curr_pic_flag: Vec<u32>,
+    pub use_delta_flag: Vec<u32>,
+    pub delta_poc_s0_minus1: Vec<u32>,
+    pub used_by_curr_pic_s0_flag: Vec<u32>,
+    pub delta_poc_s1_minus1: Vec<u32>,
+    pub used_by_curr_pic_s1_flag: Vec<u32>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SpsFields {
@@ -51,6 +75,8 @@ pub struct SpsFields {
     pub sps_3d_extension_flag: u32,
     pub sps_scc_extension_flag: u32,
     pub sps_extension_4bits: u32,
+    pub st_ref_pic_set_size: usize,
+    pub st_ref_pic_set: Vec<SpsStRefPicSetFields>,
     pub pic_size_in_ctbs_y: u32,
 }
 
@@ -64,6 +90,8 @@ pub fn sps_parse(data: &[u8]) -> Result<SpsFields, Error> {
     let mut raw = empty_raw_sps_fields();
     let status = unsafe { ffi::h265nal_sps_parse(data.as_ptr(), data.len(), &mut raw) };
     status_to_result(status)?;
+
+    let st_ref_pic_set = sps_st_ref_pic_sets(data)?;
 
     Ok(SpsFields {
         sps_video_parameter_set_id: raw.sps_video_parameter_set_id,
@@ -113,8 +141,122 @@ pub fn sps_parse(data: &[u8]) -> Result<SpsFields, Error> {
         sps_3d_extension_flag: raw.sps_3d_extension_flag,
         sps_scc_extension_flag: raw.sps_scc_extension_flag,
         sps_extension_4bits: raw.sps_extension_4bits,
+        st_ref_pic_set_size: st_ref_pic_set.len(),
+        st_ref_pic_set,
         pic_size_in_ctbs_y: raw.pic_size_in_ctbs_y,
     })
+}
+
+pub fn sps_st_ref_pic_sets(data: &[u8]) -> Result<Vec<SpsStRefPicSetFields>, Error> {
+    let mut out_count = 0usize;
+    let status =
+        unsafe { ffi::h265nal_sps_st_ref_pic_set_count(data.as_ptr(), data.len(), &mut out_count) };
+    status_to_result(status)?;
+
+    let mut st_ref_pic_set = Vec::with_capacity(out_count);
+    for set_index in 0..out_count {
+        st_ref_pic_set.push(sps_st_ref_pic_set_parse(data, set_index)?);
+    }
+    Ok(st_ref_pic_set)
+}
+
+pub fn sps_st_ref_pic_set_parse(
+    data: &[u8],
+    st_ref_pic_set_idx: usize,
+) -> Result<SpsStRefPicSetFields, Error> {
+    let mut raw = RawSpsStRefPicSetFields {
+        inter_ref_pic_set_prediction_flag: 0,
+        delta_idx_minus1: 0,
+        delta_rps_sign: 0,
+        abs_delta_rps_minus1: 0,
+        num_negative_pics: 0,
+        num_positive_pics: 0,
+        used_by_curr_pic_flag_size: 0,
+        use_delta_flag_size: 0,
+        delta_poc_s0_minus1_size: 0,
+        used_by_curr_pic_s0_flag_size: 0,
+        delta_poc_s1_minus1_size: 0,
+        used_by_curr_pic_s1_flag_size: 0,
+    };
+    let status = unsafe {
+        ffi::h265nal_sps_st_ref_pic_set_get(data.as_ptr(), data.len(), st_ref_pic_set_idx, &mut raw)
+    };
+    status_to_result(status)?;
+
+    Ok(SpsStRefPicSetFields {
+        inter_ref_pic_set_prediction_flag: raw.inter_ref_pic_set_prediction_flag,
+        delta_idx_minus1: raw.delta_idx_minus1,
+        delta_rps_sign: raw.delta_rps_sign,
+        abs_delta_rps_minus1: raw.abs_delta_rps_minus1,
+        num_negative_pics: raw.num_negative_pics,
+        num_positive_pics: raw.num_positive_pics,
+        used_by_curr_pic_flag: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_FLAG,
+        )?,
+        use_delta_flag: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USE_DELTA_FLAG,
+        )?,
+        delta_poc_s0_minus1: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S0_MINUS1,
+        )?,
+        used_by_curr_pic_s0_flag: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S0_FLAG,
+        )?,
+        delta_poc_s1_minus1: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S1_MINUS1,
+        )?,
+        used_by_curr_pic_s1_flag: sps_st_ref_pic_set_vector_get(
+            data,
+            st_ref_pic_set_idx,
+            H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S1_FLAG,
+        )?,
+    })
+}
+
+fn sps_st_ref_pic_set_vector_get(
+    data: &[u8],
+    st_ref_pic_set_idx: usize,
+    vector_kind: u32,
+) -> Result<Vec<u32>, Error> {
+    let mut out_count = 0usize;
+    let status = unsafe {
+        ffi::h265nal_sps_st_ref_pic_set_vector_get(
+            data.as_ptr(),
+            data.len(),
+            st_ref_pic_set_idx,
+            vector_kind,
+            std::ptr::null_mut(),
+            0,
+            &mut out_count,
+        )
+    };
+    status_to_result(status)?;
+
+    let mut out_values = vec![0u32; out_count];
+    let status = unsafe {
+        ffi::h265nal_sps_st_ref_pic_set_vector_get(
+            data.as_ptr(),
+            data.len(),
+            st_ref_pic_set_idx,
+            vector_kind,
+            out_values.as_mut_ptr(),
+            out_values.len(),
+            &mut out_count,
+        )
+    };
+    status_to_result(status)?;
+    out_values.truncate(out_count);
+    Ok(out_values)
 }
 
 fn to_profile_tier_level(raw: RawProfileTierLevelFields) -> ProfileTierLevelFields {
@@ -232,6 +374,7 @@ fn empty_raw_sps_fields() -> RawSpsFields {
         sps_3d_extension_flag: 0,
         sps_scc_extension_flag: 0,
         sps_extension_4bits: 0,
+        st_ref_pic_set_size: 0,
         pic_size_in_ctbs_y: 0,
     }
 }

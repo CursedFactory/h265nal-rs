@@ -1,0 +1,1 @@
+--dump-length is not implemented yet in Rust CLI

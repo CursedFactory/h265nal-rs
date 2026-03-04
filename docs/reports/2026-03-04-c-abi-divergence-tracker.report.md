@@ -38,15 +38,15 @@ This report tracks every `// DIVERGENCE:` marker added in C ABI code so we can:
 | `h265nal_hrd_parameters_fields` + `h265nal_hrd_parameters_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | HRD parser tests needed direct parser entrypoint plus flattened scalar/vector fields and first sub-layer payload in ABI-safe form. | Group 03 Case 12 | Keep bounded vector capacities and first sub-layer surface; extend only when additional sub-layer indices are asserted. |
 | `h265nal_profile_tier_level_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for profile-tier-level parser, blocking direct parity assertions. | Group 05 Cases 22/23 | Could split into smaller accessor APIs later if desired. |
 | `h265nal_pps_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for PPS parser, blocking sample PPS parity test. | Group 04 Case 17 | Likely stable long-term helper. |
-| `h265nal_sps_fields` | `include/h265_c_api.h` | SPS tests require scalar and derived field assertions without exposing C++ object layout. | Group 09 Cases 44/45, Group 10 SPS prework | Keep as parity-oriented flattened surface; add vector accessors only if needed. |
-| `h265nal_sps_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for `H265SpsParser::ParseSps`, blocking SPS parser cases. | Group 09 Cases 44/45 | Could expand with explicit st-ref-pic-set accessors for stricter parity later. |
+| `h265nal_sps_fields` | `include/h265_c_api.h` | SPS tests require scalar and derived field assertions without exposing C++ object layout. This struct now keeps only scalar SPS fields plus `st_ref_pic_set_size`; detailed RPS vectors moved to dynamic helper APIs to match C++ vector sizes. | Group 09 Cases 44/45, Group 10 SPS prework | Keep scalar SPS output here and use dedicated dynamic helper calls for nested vectors. |
+| `h265nal_sps_parse(...)` + `h265nal_sps_st_ref_pic_set_count/get/vector_get(...)` + `h265nal_sps_st_ref_pic_set_fields` | `include/h265_c_api.h`, `src/h265_c_api.cc` | Replaced bounded SPS RPS flattening with explicit two-call dynamic query/fill helpers (`out_count` query then caller-provided buffer fill), avoiding truncation semantics and staying closer to C++ `std::vector` behavior. | Group 09 Cases 44/45 | Keep this accessor-style split; avoid reintroducing fixed-cap flattening in `h265nal_sps_fields`. |
 | `h265nal_slice_segment_layer_fields` | `include/h265_c_api.h` | Slice parser tests require selected header fields in a stable ABI-friendly struct. | Group 08 Cases 38/39/40 and Group 09 Case 41 | Extend only for additional asserted fields. |
 | `h265nal_slice_segment_layer_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for `H265SliceSegmentLayerParser::ParseSliceSegmentLayer`. | Group 08 Cases 38/39/40 and Group 09 Case 41 | Could converge with richer NAL payload APIs later. |
 | `h265nal_rtp_fields` | `include/h265_c_api.h` | RTP parity tests need AP/FU/single packet outputs from one ABI-safe flattened result without exposing C++ ownership-heavy RTP state objects. | Group 05 Cases 24/25, Group 06 Cases 26/27/28/29/30, Group 07 Case 31 | Keep as one bounded result struct; expand only if additional RTP assertions are ported. |
 | `h265nal_rtp_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | One generic `ParseRtp` bridge unlocks all RTP-family tests while minimizing new symbols and avoiding per-parser APIs. | Group 05 Cases 24/25, Group 06 Cases 26/27/28/29/30, Group 07 Case 31 | Prefer this single entrypoint unless a future test proves parser-specific symbols are required. |
 | `h265nal_bitstream_parser_state_seed_vps/sps/pps(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | Native slice tests seed parser state with mock VPS/SPS/PPS; ABI had no state mutation helpers. | Group 08 slice cases requiring seeded state | Replace with canonical parser-state builder API if added upstream. |
-| `h265nal_sei_message_fields` | `include/h265_c_api.h` | SEI parity tests need payload-family scalar/array outputs without exposing polymorphic C++ payload objects. | Group 07 Cases 33/34/35, Group 08 Cases 36/37 | Keep expanding this existing struct before adding new SEI symbols. |
-| `h265nal_sei_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for `H265SeiMessageParser::ParseSei`; now used as the single SEI parse entrypoint with payload-type dynamic casts. | Group 07 Cases 33/34/35, Group 08 Cases 36/37 | Keep one parse symbol and enrich output fields as needed. |
+| `h265nal_sei_message_fields` | `include/h265_c_api.h` | SEI parity tests need payload-family scalar metadata without exposing polymorphic C++ payload objects. Payload bytes were removed from this struct to eliminate fixed-cap/truncation behavior. | Group 07 Cases 33/34/35, Group 08 Cases 36/37 | Keep metadata in this struct; fetch variable payload bytes through dedicated dynamic helpers. |
+| `h265nal_sei_parse(...)` + `h265nal_sei_registered_itu_t_t35_payload_get(...)` + `h265nal_sei_unregistered_payload_get(...)` + `h265nal_sei_unknown_payload_get(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | `h265nal_sei_parse` remains the scalar metadata entrypoint, while payload bytes now use explicit two-call query/fill helpers to preserve full payload lengths and avoid fixed-cap truncation semantics. | Group 07 Cases 33/34/35, Group 08 Cases 36/37 | Keep one metadata parse symbol plus payload-family helper accessors. |
 | `h265nal_sps_multilayer_extension_fields` | `include/h265_c_api.h` | Multilayer extension test asserts a single scalar field requiring a stable ABI surface. | Group 09 Case 43 | Likely stable minimal flattened surface. |
 | `h265nal_sps_multilayer_extension_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | No ABI entrypoint for SPS multilayer extension parser. | Group 09 Case 43 | Could remain as dedicated helper API. |
 | `h265nal_scaling_list_data_fields` + `h265nal_scaling_list_data_parse(...)` | `include/h265_c_api.h`, `src/h265_c_api.cc` | Scaling-list parser state is nested/vector-heavy; parity tests need a bounded flattened shape for asserted flags and matrix size/value invariants. | Group 07 Case 32 | Keep flattened view minimal; add richer matrix export only if future cases require full coefficient vectors. |
@@ -112,10 +112,30 @@ This report tracks every `// DIVERGENCE:` marker added in C ABI code so we can:
 - Scope was intentionally bounded to fields asserted by Cases 02/04/05/11/12/15.
 - Rust `h265nal-sys` wrappers were added for bitstream/configuration-box/hrd and updated for nal checksum bytes; all six remaining skipped target tests are now unignored.
 
+## 2026-03-04 post-parity hardening pass note
+
+- This pass added **no new C API symbols**.
+- It expanded two existing flattened structs and their parse fill paths:
+  - `h265nal_sps_fields` / `h265nal_sps_parse(...)` now include bounded per-`st_ref_pic_set` introspection arrays (prediction fields and S0/S1 vector families) for deeper SPS parity assertions.
+  - `h265nal_sei_message_fields` / `h265nal_sei_parse(...)` now include bounded payload-byte exports for user-data-registered, user-data-unregistered, and unknown payload families.
+- Rust `h265nal-sys` FFI/raw + safe wrappers were updated to match, and SPS/SEI parity tests were expanded to assert new fields.
+
+## 2026-03-04 dynamic SPS/SEI payload accuracy pass note
+
+- This pass added **6 new C API symbols** and **1 new helper struct**:
+  - `h265nal_sps_st_ref_pic_set_count(...)`
+  - `h265nal_sps_st_ref_pic_set_get(...)`
+  - `h265nal_sps_st_ref_pic_set_vector_get(...)`
+  - `h265nal_sps_st_ref_pic_set_fields`
+  - `h265nal_sei_registered_itu_t_t35_payload_get(...)`
+  - `h265nal_sei_unregistered_payload_get(...)`
+  - `h265nal_sei_unknown_payload_get(...)`
+- It removed bounded array payload export from `h265nal_sei_message_fields` and bounded RPS flattening from `h265nal_sps_fields`, replacing both with explicit size-query + fill helper calls.
+- Rust wrappers now return `Vec<_>` for SPS per-set vectors and SEI payload bytes, while keeping `sps_parse`/`sei_parse` as primary scalar metadata surfaces.
+
 ## Still intentionally not added (to keep divergence bounded)
 
-- Full SPS short-term-ref-pic-set vector introspection ABI.
-- Additional SEI payload-family field ABIs beyond Cases 33-37.
+- Additional typed SEI payload-family fields beyond current dynamic-cast coverage.
 
 These remain in `docs/plans/h265nal-rust-test-port-missing-features.md` until needed by active group slices.
 

@@ -56,7 +56,9 @@ pub use rtp::{
 pub use scaling_list_data::{scaling_list_data_parse, ScalingListDataFields};
 pub use sei::{sei_parse, SeiMessageFields};
 pub use slice_segment_layer::{slice_segment_layer_parse, SliceSegmentLayerFields};
-pub use sps::{sps_parse, SpsFields};
+pub use sps::{
+    sps_parse, sps_st_ref_pic_set_parse, sps_st_ref_pic_sets, SpsFields, SpsStRefPicSetFields,
+};
 pub use sps_3d_extension::{sps_3d_extension_parse, Sps3dExtensionFields};
 pub use sps_multilayer_extension::{sps_multilayer_extension_parse, SpsMultilayerExtensionFields};
 pub use sps_range_extension::{sps_range_extension_parse, SpsRangeExtensionFields};

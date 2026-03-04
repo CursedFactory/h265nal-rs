@@ -352,6 +352,40 @@ size_t ScalingListIndex(size_t size_id, size_t matrix_id) {
   return size_id * kScalingListMatrixIdCount + matrix_id;
 }
 
+int CopyU32VectorToCallerBuffer(const std::vector<uint32_t>& values,
+                                uint32_t* out_values,
+                                size_t out_capacity,
+                                size_t* out_count) {
+  *out_count = values.size();
+  if (out_values == nullptr) {
+    return out_capacity == 0 ? H265NAL_STATUS_OK : H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+  if (out_capacity < values.size()) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+  for (size_t i = 0; i < values.size(); ++i) {
+    out_values[i] = values[i];
+  }
+  return H265NAL_STATUS_OK;
+}
+
+int CopyU8VectorToCallerBuffer(const std::vector<uint8_t>& values,
+                               uint8_t* out_values,
+                               size_t out_capacity,
+                               size_t* out_count) {
+  *out_count = values.size();
+  if (out_values == nullptr) {
+    return out_capacity == 0 ? H265NAL_STATUS_OK : H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+  if (out_capacity < values.size()) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+  for (size_t i = 0; i < values.size(); ++i) {
+    out_values[i] = values[i];
+  }
+  return H265NAL_STATUS_OK;
+}
+
 void FillProfileInfoFields(
     const h265nal::H265ProfileInfoParser::ProfileInfoState& profile,
     h265nal_profile_info_fields* out_profile) {
@@ -967,8 +1001,118 @@ int h265nal_sps_parse(const uint8_t* data,
   out_sps->sps_3d_extension_flag = sps->sps_3d_extension_flag;
   out_sps->sps_scc_extension_flag = sps->sps_scc_extension_flag;
   out_sps->sps_extension_4bits = sps->sps_extension_4bits;
+  out_sps->st_ref_pic_set_size = sps->st_ref_pic_set.size();
+
   out_sps->pic_size_in_ctbs_y = sps->getPicSizeInCtbsY();
   return H265NAL_STATUS_OK;
+}
+
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set count for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_count(const uint8_t* data,
+                                     size_t len,
+                                     size_t* out_count) {
+  if (out_count == nullptr || (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sps = h265nal::H265SpsParser::ParseSps(data, len);
+  if (sps == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  *out_count = sps->st_ref_pic_set.size();
+  return H265NAL_STATUS_OK;
+}
+
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set scalar/size fields for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_get(
+    const uint8_t* data,
+    size_t len,
+    size_t st_ref_pic_set_idx,
+    h265nal_sps_st_ref_pic_set_fields* out_st_ref_pic_set) {
+  if (out_st_ref_pic_set == nullptr || (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sps = h265nal::H265SpsParser::ParseSps(data, len);
+  if (sps == nullptr || st_ref_pic_set_idx >= sps->st_ref_pic_set.size()) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  const auto& st_ref_pic_set = sps->st_ref_pic_set[st_ref_pic_set_idx];
+  if (st_ref_pic_set == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  out_st_ref_pic_set->inter_ref_pic_set_prediction_flag =
+      st_ref_pic_set->inter_ref_pic_set_prediction_flag;
+  out_st_ref_pic_set->delta_idx_minus1 = st_ref_pic_set->delta_idx_minus1;
+  out_st_ref_pic_set->delta_rps_sign = st_ref_pic_set->delta_rps_sign;
+  out_st_ref_pic_set->abs_delta_rps_minus1 = st_ref_pic_set->abs_delta_rps_minus1;
+  out_st_ref_pic_set->num_negative_pics = st_ref_pic_set->num_negative_pics;
+  out_st_ref_pic_set->num_positive_pics = st_ref_pic_set->num_positive_pics;
+  out_st_ref_pic_set->used_by_curr_pic_flag_size =
+      st_ref_pic_set->used_by_curr_pic_flag.size();
+  out_st_ref_pic_set->use_delta_flag_size = st_ref_pic_set->use_delta_flag.size();
+  out_st_ref_pic_set->delta_poc_s0_minus1_size =
+      st_ref_pic_set->delta_poc_s0_minus1.size();
+  out_st_ref_pic_set->used_by_curr_pic_s0_flag_size =
+      st_ref_pic_set->used_by_curr_pic_s0_flag.size();
+  out_st_ref_pic_set->delta_poc_s1_minus1_size =
+      st_ref_pic_set->delta_poc_s1_minus1.size();
+  out_st_ref_pic_set->used_by_curr_pic_s1_flag_size =
+      st_ref_pic_set->used_by_curr_pic_s1_flag.size();
+  return H265NAL_STATUS_OK;
+}
+
+// DIVERGENCE: expose dynamic SPS st-ref-pic-set vectors for Rust parity tests.
+int h265nal_sps_st_ref_pic_set_vector_get(const uint8_t* data,
+                                          size_t len,
+                                          size_t st_ref_pic_set_idx,
+                                          uint32_t vector_kind,
+                                          uint32_t* out_values,
+                                          size_t out_capacity,
+                                          size_t* out_count) {
+  if (out_count == nullptr || (out_values == nullptr && out_capacity > 0) ||
+      (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sps = h265nal::H265SpsParser::ParseSps(data, len);
+  if (sps == nullptr || st_ref_pic_set_idx >= sps->st_ref_pic_set.size()) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  const auto& st_ref_pic_set = sps->st_ref_pic_set[st_ref_pic_set_idx];
+  if (st_ref_pic_set == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  const std::vector<uint32_t>* values = nullptr;
+  switch (vector_kind) {
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_FLAG:
+      values = &st_ref_pic_set->used_by_curr_pic_flag;
+      break;
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USE_DELTA_FLAG:
+      values = &st_ref_pic_set->use_delta_flag;
+      break;
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S0_MINUS1:
+      values = &st_ref_pic_set->delta_poc_s0_minus1;
+      break;
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S0_FLAG:
+      values = &st_ref_pic_set->used_by_curr_pic_s0_flag;
+      break;
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_DELTA_POC_S1_MINUS1:
+      values = &st_ref_pic_set->delta_poc_s1_minus1;
+      break;
+    case H265NAL_SPS_ST_REF_PIC_SET_VECTOR_USED_BY_CURR_PIC_S1_FLAG:
+      values = &st_ref_pic_set->used_by_curr_pic_s1_flag;
+      break;
+    default:
+      return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  return CopyU32VectorToCallerBuffer(*values, out_values, out_capacity, out_count);
 }
 
 // DIVERGENCE: expose state seeding helpers for slice parser parity tests.
@@ -1138,38 +1282,9 @@ int h265nal_sei_parse(const uint8_t* data,
     return H265NAL_STATUS_PARSE_FAILURE;
   }
 
+  *out_sei_message = {};
   out_sei_message->payload_type = static_cast<int32_t>(sei->payload_type);
   out_sei_message->payload_size = sei->payload_size;
-  out_sei_message->has_user_data_registered_itu_t_t35 = 0;
-  out_sei_message->user_data_registered_itu_t_t35_country_code = 0;
-  out_sei_message->user_data_registered_itu_t_t35_country_code_extension_byte =
-      0;
-  out_sei_message->has_user_data_unregistered = 0;
-  out_sei_message->user_data_unregistered_uuid_iso_iec_11578_1 = 0;
-  out_sei_message->user_data_unregistered_uuid_iso_iec_11578_2 = 0;
-  out_sei_message->has_alpha_channel_info = 0;
-  out_sei_message->alpha_channel_cancel_flag = 0;
-  out_sei_message->alpha_channel_use_idc = 0;
-  out_sei_message->alpha_channel_bit_depth_minus8 = 0;
-  out_sei_message->alpha_transparent_value = 0;
-  out_sei_message->alpha_opaque_value = 0;
-  out_sei_message->alpha_channel_incr_flag = 0;
-  out_sei_message->alpha_channel_clip_flag = 0;
-  out_sei_message->alpha_channel_clip_type_flag = 0;
-  out_sei_message->has_mastering_display_colour_volume = 0;
-  out_sei_message->mastering_display_display_primaries_x[0] = 0;
-  out_sei_message->mastering_display_display_primaries_x[1] = 0;
-  out_sei_message->mastering_display_display_primaries_x[2] = 0;
-  out_sei_message->mastering_display_display_primaries_y[0] = 0;
-  out_sei_message->mastering_display_display_primaries_y[1] = 0;
-  out_sei_message->mastering_display_display_primaries_y[2] = 0;
-  out_sei_message->mastering_display_white_point_x = 0;
-  out_sei_message->mastering_display_white_point_y = 0;
-  out_sei_message->mastering_display_max_display_mastering_luminance = 0;
-  out_sei_message->mastering_display_min_display_mastering_luminance = 0;
-  out_sei_message->has_content_light_level_info = 0;
-  out_sei_message->content_light_level_max_content_light_level = 0;
-  out_sei_message->content_light_level_max_pic_average_light_level = 0;
 
   auto* user_data_registered_itu_t_t35 = dynamic_cast<
       h265nal::H265SeiUserDataRegisteredItuTT35Parser::
@@ -1180,6 +1295,8 @@ int h265nal_sei_parse(const uint8_t* data,
         user_data_registered_itu_t_t35->itu_t_t35_country_code;
     out_sei_message->user_data_registered_itu_t_t35_country_code_extension_byte =
         user_data_registered_itu_t_t35->itu_t_t35_country_code_extension_byte;
+    out_sei_message->user_data_registered_itu_t_t35_payload_size =
+        static_cast<uint32_t>(user_data_registered_itu_t_t35->payload.size());
   }
 
   auto* user_data_unregistered = dynamic_cast<
@@ -1191,6 +1308,8 @@ int h265nal_sei_parse(const uint8_t* data,
         user_data_unregistered->uuid_iso_iec_11578_1;
     out_sei_message->user_data_unregistered_uuid_iso_iec_11578_2 =
         user_data_unregistered->uuid_iso_iec_11578_2;
+    out_sei_message->user_data_unregistered_payload_size =
+        static_cast<uint32_t>(user_data_unregistered->payload.size());
   }
 
   auto* alpha_channel_info =
@@ -1253,7 +1372,99 @@ int h265nal_sei_parse(const uint8_t* data,
     out_sei_message->content_light_level_max_pic_average_light_level =
         content_light_level_info->max_pic_average_light_level;
   }
+
+  auto* unknown_payload =
+      dynamic_cast<h265nal::H265SeiUnknownParser::H265SeiUnknownState*>(
+          sei->payload_state.get());
+  if (unknown_payload != nullptr) {
+    out_sei_message->has_unknown_payload = 1;
+    out_sei_message->unknown_payload_size =
+        static_cast<uint32_t>(unknown_payload->payload.size());
+  }
   return H265NAL_STATUS_OK;
+}
+
+// DIVERGENCE: expose dynamic SEI registered ITU-T T.35 payload bytes.
+int h265nal_sei_registered_itu_t_t35_payload_get(const uint8_t* data,
+                                                 size_t len,
+                                                 uint8_t* out_values,
+                                                 size_t out_capacity,
+                                                 size_t* out_count) {
+  if (out_count == nullptr || (out_values == nullptr && out_capacity > 0) ||
+      (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sei = h265nal::H265SeiMessageParser::ParseSei(data, len);
+  if (sei == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  auto* payload = dynamic_cast<
+      h265nal::H265SeiUserDataRegisteredItuTT35Parser::
+          H265SeiUserDataRegisteredItuTT35State*>(sei->payload_state.get());
+  if (payload == nullptr) {
+    *out_count = 0;
+    return H265NAL_STATUS_OK;
+  }
+
+  return CopyU8VectorToCallerBuffer(payload->payload, out_values, out_capacity,
+                                    out_count);
+}
+
+// DIVERGENCE: expose dynamic SEI unregistered payload bytes.
+int h265nal_sei_unregistered_payload_get(const uint8_t* data,
+                                         size_t len,
+                                         uint8_t* out_values,
+                                         size_t out_capacity,
+                                         size_t* out_count) {
+  if (out_count == nullptr || (out_values == nullptr && out_capacity > 0) ||
+      (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sei = h265nal::H265SeiMessageParser::ParseSei(data, len);
+  if (sei == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  auto* payload = dynamic_cast<
+      h265nal::H265SeiUserDataUnregisteredParser::
+          H265SeiUserDataUnregisteredState*>(sei->payload_state.get());
+  if (payload == nullptr) {
+    *out_count = 0;
+    return H265NAL_STATUS_OK;
+  }
+
+  return CopyU8VectorToCallerBuffer(payload->payload, out_values, out_capacity,
+                                    out_count);
+}
+
+// DIVERGENCE: expose dynamic SEI unknown payload bytes.
+int h265nal_sei_unknown_payload_get(const uint8_t* data,
+                                    size_t len,
+                                    uint8_t* out_values,
+                                    size_t out_capacity,
+                                    size_t* out_count) {
+  if (out_count == nullptr || (out_values == nullptr && out_capacity > 0) ||
+      (data == nullptr && len > 0)) {
+    return H265NAL_STATUS_INVALID_ARGUMENT;
+  }
+
+  auto sei = h265nal::H265SeiMessageParser::ParseSei(data, len);
+  if (sei == nullptr) {
+    return H265NAL_STATUS_PARSE_FAILURE;
+  }
+
+  auto* payload = dynamic_cast<h265nal::H265SeiUnknownParser::H265SeiUnknownState*>(
+      sei->payload_state.get());
+  if (payload == nullptr) {
+    *out_count = 0;
+    return H265NAL_STATUS_OK;
+  }
+
+  return CopyU8VectorToCallerBuffer(payload->payload, out_values, out_capacity,
+                                    out_count);
 }
 
 // DIVERGENCE: expose `H265SpsMultilayerExtensionParser::ParseSpsMultilayerExtension`.

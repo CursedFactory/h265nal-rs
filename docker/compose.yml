@@ -1,0 +1,46 @@
+name: h265nal-parity
+
+x-work-mount: &work-mount ../:/work
+
+x-service-defaults: &service-defaults
+  working_dir: /work
+  stdin_open: false
+  tty: false
+
+services:
+  baseline:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: docker/baseline.Dockerfile
+    entrypoint: ["/usr/local/bin/baseline_entry.sh"]
+    environment:
+      UPSTREAM_REPO_URL: ${UPSTREAM_REPO_URL:-https://github.com/chemag/h265nal}
+      UPSTREAM_REF: ${UPSTREAM_REF:-main}
+      BASELINE_SRC_DIR: /opt/baseline-src
+      BASELINE_BUILD_DIR: /opt/baseline-build
+    volumes:
+      - *work-mount
+      - baseline-src:/opt/baseline-src
+      - baseline-build:/opt/baseline-build
+
+  local:
+    <<: *service-defaults
+    build:
+      context: ..
+      dockerfile: docker/local.Dockerfile
+    entrypoint: ["/usr/local/bin/local_entry.sh"]
+    environment:
+      WORK_DIR: /work
+      CARGO_HOME: /opt/local-cargo-home
+      CARGO_TARGET_DIR: /opt/local-target
+    volumes:
+      - *work-mount
+      - local-cargo-home:/opt/local-cargo-home
+      - local-target:/opt/local-target
+
+volumes:
+  baseline-src:
+  baseline-build:
+  local-cargo-home:
+  local-target:

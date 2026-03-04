@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/h265nal-sys", "crates/h265nal-cli", "crates/h265nal-parity"]
+resolver = "2"

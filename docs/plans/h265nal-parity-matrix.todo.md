@@ -9,11 +9,11 @@
 - [ ] Keep group orchestration plan current: `docs/plans/h265nal-rust-test-port-groups.plan.md`.
 - [ ] Keep trigger prompts current: `docs/plans/h265nal-rust-test-port-trigger.prompt.md`.
 - [ ] Track API gaps in: `docs/plans/h265nal-rust-test-port-missing-features.md`.
-- [ ] Group 01 (cases 1-5) - in progress
-- [ ] Group 02 (cases 6-10)
-- [ ] Group 03 (cases 11-15)
-- [ ] Group 04 (cases 16-20)
-- [ ] Group 05 (cases 21-25)
+- [x] Group 01 (cases 1-5)
+- [x] Group 02 (cases 6-10)
+- [x] Group 03 (cases 11-15)
+- [x] Group 04 (cases 16-20)
+- [ ] Group 05 (cases 21-25) - in progress
 - [ ] Group 06 (cases 26-30)
 - [ ] Group 07 (cases 31-35)
 - [ ] Group 08 (cases 36-40)

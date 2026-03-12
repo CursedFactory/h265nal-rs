@@ -22,15 +22,15 @@ Parity and test-port crates are intentionally excluded from release checks.
 ## Versioning
 
 - Workspace version is set in `Cargo.toml` under `[workspace.package]`.
-- Current version: `0.1.2`.
+- Current version: `0.1.3`.
 - `release.toml` enforces shared workspace versions and `vX.Y.Z` tags.
 
 ## Local Release Workflow
 
 1. Run dry run:
-   - `bash scripts/cargo-release.sh 0.1.2`
+   - `bash scripts/cargo-release.sh 0.1.3`
 2. Publish for real:
-   - `bash scripts/cargo-release.sh 0.1.2 --execute`
+   - `bash scripts/cargo-release.sh 0.1.3 --execute`
 3. Push release commit and tags:
    - `git push origin HEAD`
    - `git push origin --tags`

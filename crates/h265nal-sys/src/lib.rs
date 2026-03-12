@@ -40,7 +40,10 @@ pub use common::{
     MoreRbspDataResult,
 };
 pub use configuration_box::{configuration_box_parse, ConfigurationBoxFields};
-pub use constants::{ABI_VERSION, DUMP_FLAG_ONE_LINE};
+pub use constants::{
+    ABI_VERSION, DUMP_FLAG_ADD_CHECKSUM, DUMP_FLAG_ADD_LENGTH, DUMP_FLAG_ADD_OFFSET,
+    DUMP_FLAG_ADD_PARSED_LENGTH, DUMP_FLAG_ADD_RESOLUTION, DUMP_FLAG_ONE_LINE,
+};
 pub use error::Error;
 pub use hrd_parameters::{hrd_parameters_parse, HrdParametersFields};
 pub use nal_unit::{nal_unit_header_get_nal_unit_type, nal_unit_parse, NalUnitFields};

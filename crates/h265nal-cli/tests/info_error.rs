@@ -84,3 +84,41 @@ fn frames_per_second_is_used_with_dump_length() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("nal_num,frame_num,nal_unit_type"));
 }
+
+#[test]
+fn dump_all_no_add_resolution_omits_sps_width_height() {
+    let output = Command::new(env!("CARGO_BIN_EXE_h265nal-cli"))
+        .arg("--dump-all")
+        .arg("--output-format")
+        .arg("c")
+        .arg("--no-as-one-line")
+        .arg("--no-add-resolution")
+        .arg(fixture_path("nvenc.265"))
+        .output()
+        .expect("failed to run with --dump-all --no-add-resolution");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Parity context: nal-compare found persistent diffs against chemag/h265nal
+    // where Rust output added SPS-only `width:`/`height:` lines in dump-all mode.
+    assert!(!stdout.contains("\n      width:"));
+    assert!(!stdout.contains("\n      height:"));
+}
+
+#[test]
+fn dump_all_add_resolution_includes_sps_width_height() {
+    let output = Command::new(env!("CARGO_BIN_EXE_h265nal-cli"))
+        .arg("--dump-all")
+        .arg("--output-format")
+        .arg("c")
+        .arg("--no-as-one-line")
+        .arg("--add-resolution")
+        .arg(fixture_path("nvenc.265"))
+        .output()
+        .expect("failed to run with --dump-all --add-resolution");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\n      width:"));
+    assert!(stdout.contains("\n      height:"));
+}

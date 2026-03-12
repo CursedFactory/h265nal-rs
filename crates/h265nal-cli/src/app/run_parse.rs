@@ -81,7 +81,15 @@ fn run_c_mode(
         if matches!(options.outfile.as_deref(), Some(path) if path != Path::new("-")) {
             return Err("--outfile is not supported yet with --dump-all".to_string());
         }
-        return parser::dump_nalus_annexb_to_stdout(data, options.as_one_line);
+        return parser::dump_nalus_annexb_to_stdout(
+            data,
+            options.as_one_line,
+            options.add_offset,
+            options.add_length,
+            options.add_parsed_length,
+            options.add_checksum,
+            options.add_resolution,
+        );
     }
 
     let count = match data {

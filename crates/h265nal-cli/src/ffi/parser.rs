@@ -12,12 +12,34 @@ pub fn count_nalus_with_options(
     Ok(nals.len())
 }
 
-pub fn dump_nalus_annexb_to_stdout(data: &[u8], one_line: bool) -> Result<(), String> {
-    let flags = if one_line {
-        h265nal_sys::DUMP_FLAG_ONE_LINE
-    } else {
-        0
-    };
+pub fn dump_nalus_annexb_to_stdout(
+    data: &[u8],
+    one_line: bool,
+    add_offset: bool,
+    add_length: bool,
+    add_parsed_length: bool,
+    add_checksum: bool,
+    add_resolution: bool,
+) -> Result<(), String> {
+    let mut flags = 0u32;
+    if one_line {
+        flags |= h265nal_sys::DUMP_FLAG_ONE_LINE;
+    }
+    if add_offset {
+        flags |= h265nal_sys::DUMP_FLAG_ADD_OFFSET;
+    }
+    if add_length {
+        flags |= h265nal_sys::DUMP_FLAG_ADD_LENGTH;
+    }
+    if add_parsed_length {
+        flags |= h265nal_sys::DUMP_FLAG_ADD_PARSED_LENGTH;
+    }
+    if add_checksum {
+        flags |= h265nal_sys::DUMP_FLAG_ADD_CHECKSUM;
+    }
+    if add_resolution {
+        flags |= h265nal_sys::DUMP_FLAG_ADD_RESOLUTION;
+    }
     h265nal_sys::dump_annexb_to_stdout(data, flags).map_err(|err| format!("dump failed: {err}"))
 }
 

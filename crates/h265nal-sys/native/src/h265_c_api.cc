@@ -56,6 +56,16 @@ int h265nal_annexb_dump(const uint8_t* data, size_t len, uint32_t dump_flags) {
   const int indent_level =
       (dump_flags & H265NAL_DUMP_FLAG_ONE_LINE) != 0 ? -1 : 0;
   h265nal::ParsingOptions parsing_options;
+  parsing_options.add_offset =
+      (dump_flags & H265NAL_DUMP_FLAG_ADD_OFFSET) != 0;
+  parsing_options.add_length =
+      (dump_flags & H265NAL_DUMP_FLAG_ADD_LENGTH) != 0;
+  parsing_options.add_parsed_length =
+      (dump_flags & H265NAL_DUMP_FLAG_ADD_PARSED_LENGTH) != 0;
+  parsing_options.add_checksum =
+      (dump_flags & H265NAL_DUMP_FLAG_ADD_CHECKSUM) != 0;
+  parsing_options.add_resolution =
+      (dump_flags & H265NAL_DUMP_FLAG_ADD_RESOLUTION) != 0;
   auto bitstream =
       h265nal::H265BitstreamParser::ParseBitstream(data, len, parsing_options);
   if (bitstream == nullptr) {
